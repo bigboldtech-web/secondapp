@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { updateListingStatus, deleteListing } from "@/app/actions";
+import { updateListingStatus } from "@/app/actions";
 
 interface VendorListing {
   id: string;
@@ -44,13 +44,9 @@ export default function VendorListingsClient({ listings }: { listings: VendorLis
     sold: listings.filter((l) => l.status === "sold").length,
   };
 
-  const handleAction = async (id: string, action: string) => {
+  const handleAction = async (id: string, status: string) => {
     setActionLoading(id);
-    if (action === "delete") {
-      await deleteListing(id);
-    } else {
-      await updateListingStatus(id, action);
-    }
+    await updateListingStatus(id, status);
     router.refresh();
     setActionLoading(null);
   };
@@ -124,7 +120,13 @@ export default function VendorListingsClient({ listings }: { listings: VendorLis
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-1.5 shrink-0">
+                <div className="flex gap-1.5 shrink-0 flex-wrap justify-end">
+                  <Link
+                    href={`/vendor/listings/${listing.id}/edit`}
+                    className="text-[10px] px-2.5 py-1.5 rounded-md bg-white border border-border text-text-primary font-semibold no-underline"
+                  >
+                    Edit
+                  </Link>
                   {listing.status === "active" && (
                     <>
                       <button
@@ -152,13 +154,6 @@ export default function VendorListingsClient({ listings }: { listings: VendorLis
                       Reactivate
                     </button>
                   )}
-                  <button
-                    onClick={() => handleAction(listing.id, "delete")}
-                    disabled={actionLoading === listing.id}
-                    className="text-[10px] px-2.5 py-1.5 rounded-md bg-condition-rough-bg text-condition-rough-text font-semibold border-none cursor-pointer"
-                  >
-                    Delete
-                  </button>
                 </div>
               </div>
             ))}
