@@ -26,7 +26,15 @@ export async function getMyNotifications() {
 }
 
 export async function markAsRead(notifId: string) {
-  await prisma.notification.update({ where: { id: notifId }, data: { isRead: true } });
+  const session = await getSession();
+  if (!session) return;
+
+  // updateMany with userId gate so the update is a no-op when the caller
+  // doesn't own the notification — cheaper than findUnique+check.
+  await prisma.notification.updateMany({
+    where: { id: notifId, userId: session.userId },
+    data: { isRead: true },
+  });
   revalidatePath("/notifications");
 }
 

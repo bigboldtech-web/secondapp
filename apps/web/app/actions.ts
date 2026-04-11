@@ -14,16 +14,15 @@ export async function createAlert(data: {
   condition?: string;
   specs?: Record<string, string>;
 }) {
-  // For MVP, use first buyer user
-  const user = await prisma.user.findFirst({ where: { role: "buyer" } });
-  if (!user) return { error: "Please log in first" };
+  const session = await getSession();
+  if (!session) return { error: "Please log in first" };
 
   const product = await prisma.product.findUnique({ where: { slug: data.productSlug } });
   if (!product) return { error: "Product not found" };
 
   const alert = await prisma.alert.create({
     data: {
-      userId: user.id,
+      userId: session.userId,
       productId: product.id,
       maxPrice: data.maxPrice ? data.maxPrice * 100 : null,
       conditionMin: data.condition || null,
@@ -31,21 +30,31 @@ export async function createAlert(data: {
     },
   });
 
+  revalidatePath("/alerts");
   return { success: true, alertId: alert.id };
 }
 
 export async function deleteAlert(alertId: string) {
+  const session = await getSession();
+  if (!session) return { error: "Not authenticated" };
+
+  const alert = await prisma.alert.findUnique({
+    where: { id: alertId },
+    select: { userId: true },
+  });
+  if (!alert || alert.userId !== session.userId) return { error: "Alert not found" };
+
   await prisma.alert.delete({ where: { id: alertId } });
   revalidatePath("/alerts");
   return { success: true };
 }
 
 export async function getMyAlerts() {
-  const user = await prisma.user.findFirst({ where: { role: "buyer" } });
-  if (!user) return [];
+  const session = await getSession();
+  if (!session) return [];
 
   const alerts = await prisma.alert.findMany({
-    where: { userId: user.id, isActive: true },
+    where: { userId: session.userId, isActive: true },
     include: {
       product: {
         include: {
@@ -76,42 +85,42 @@ export async function getMyAlerts() {
 // ============================================================
 
 export async function toggleSaveListing(listingId: string) {
-  const user = await prisma.user.findFirst({ where: { role: "buyer" } });
-  if (!user) return { error: "Please log in first" };
+  const session = await getSession();
+  if (!session) return { error: "Please log in first" };
 
-  // Get or create default wishlist
   let wishlist = await prisma.collection.findFirst({
-    where: { userId: user.id, name: "Saved Items" },
+    where: { userId: session.userId, name: "Saved Items" },
   });
 
   if (!wishlist) {
     wishlist = await prisma.collection.create({
-      data: { userId: user.id, name: "Saved Items", isPublic: false },
+      data: { userId: session.userId, name: "Saved Items", isPublic: false },
     });
   }
 
-  // Check if already saved
   const existing = await prisma.collectionItem.findFirst({
     where: { collectionId: wishlist.id, listingId },
   });
 
   if (existing) {
     await prisma.collectionItem.delete({ where: { id: existing.id } });
+    revalidatePath("/saved");
     return { saved: false };
   } else {
     await prisma.collectionItem.create({
       data: { collectionId: wishlist.id, listingId },
     });
+    revalidatePath("/saved");
     return { saved: true };
   }
 }
 
 export async function getMySavedListings() {
-  const user = await prisma.user.findFirst({ where: { role: "buyer" } });
-  if (!user) return [];
+  const session = await getSession();
+  if (!session) return [];
 
   const wishlist = await prisma.collection.findFirst({
-    where: { userId: user.id, name: "Saved Items" },
+    where: { userId: session.userId, name: "Saved Items" },
     include: {
       items: {
         include: {
