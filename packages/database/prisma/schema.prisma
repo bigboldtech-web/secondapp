@@ -343,6 +343,43 @@ model ListingReaction {
   @@unique([listingId, userId, type])
 }
 
+// ============================================================
+// SEARCH (in-house autosuggest, OLX-inspired)
+// ============================================================
+
+model SearchTerm {
+  id              String    @id @default(cuid())
+  term            String    // canonical, normalized (lowercase, no punct)
+  displayTerm     String    // pretty form shown to users
+  termType        String    // brand | model | product | category | query | ngram
+  categoryId      String?   // null = global
+  metaphone       String?   // Double Metaphone primary key for phonetic lookups
+  searchFrequency Int       @default(0)
+  viewCount       Int       @default(0)
+  lastSearchedAt  DateTime?
+  redirectPath    String?   // e.g. /product/iphone-11 or /category/phones
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([term, termType])
+  @@index([metaphone])
+}
+
+model SearchQueryLog {
+  id                String   @id @default(cuid())
+  query             String
+  normalized        String
+  userId            String?
+  categoryId        String?
+  resultCount       Int      @default(0)
+  clickedListingId  String?
+  clickedTermId     String?
+  createdAt         DateTime @default(now())
+
+  @@index([normalized])
+  @@index([createdAt])
+}
+
 model ListingComment {
   id        String   @id @default(cuid())
   listingId String
