@@ -49,6 +49,10 @@ export default function ListingWizard({ catalog }: ListingWizardProps) {
   const [price, setPrice] = useState("");
   const [originalPrice, setOriginalPrice] = useState("");
   const [description, setDescription] = useState("");
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -74,11 +78,48 @@ export default function ListingWizard({ catalog }: ListingWizardProps) {
       case "model": return !!modelId;
       case "specs": return Object.keys(selectedSpecs).length > 0;
       case "condition": return !!condition;
-      case "photos": return true; // photos optional for MVP
+      case "photos": return photos.length >= 3 && !uploading;
       case "price": return !!price && parseInt(price) > 0;
       case "description": return true; // optional
       default: return true;
     }
+  };
+
+  const uploadSingle = async (file: File, kind: "photo" | "video") => {
+    setUploadError("");
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/upload", { method: "POST", body: fd });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setUploadError(body.error || "Upload failed");
+      return null;
+    }
+    return body.url as string;
+  };
+
+  const handlePhotoUpload = async (files: FileList | null) => {
+    if (!files) return;
+    setUploading(true);
+    const uploaded: string[] = [];
+    for (const file of Array.from(files).slice(0, 10 - photos.length)) {
+      const url = await uploadSingle(file, "photo");
+      if (url) uploaded.push(url);
+    }
+    setPhotos((prev) => [...prev, ...uploaded].slice(0, 10));
+    setUploading(false);
+  };
+
+  const handleVideoUpload = async (file: File | null) => {
+    if (!file) return;
+    setUploading(true);
+    const url = await uploadSingle(file, "video");
+    if (url) setVideoUrl(url);
+    setUploading(false);
+  };
+
+  const removePhoto = (idx: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== idx));
   };
 
   const goNext = () => {
@@ -108,7 +149,7 @@ export default function ListingWizard({ catalog }: ListingWizardProps) {
               <Link href="/vendor/dashboard" className="px-5 py-2.5 rounded-lg border border-border text-sm font-semibold text-text-primary no-underline">
                 Dashboard
               </Link>
-              <button onClick={() => { setSubmitted(false); setStep("category"); setCategoryId(""); setBrandId(""); setModelId(""); setSelectedSpecs({}); setCondition(""); setPrice(""); setOriginalPrice(""); setDescription(""); }} className="px-5 py-2.5 rounded-lg bg-coral text-white text-sm font-semibold border-none cursor-pointer">
+              <button onClick={() => { setSubmitted(false); setStep("category"); setCategoryId(""); setBrandId(""); setModelId(""); setSelectedSpecs({}); setCondition(""); setPrice(""); setOriginalPrice(""); setDescription(""); setPhotos([]); setVideoUrl(null); }} className="px-5 py-2.5 rounded-lg bg-coral text-white text-sm font-semibold border-none cursor-pointer">
                 Post Another
               </button>
             </div>
@@ -261,24 +302,68 @@ export default function ListingWizard({ catalog }: ListingWizardProps) {
           {step === "photos" && (
             <>
               <h2 className="text-lg font-bold text-text-primary mb-1">Add Photos & Video</h2>
-              <p className="text-[12px] text-text-muted mb-4">Upload 3-10 photos and a video of the actual product</p>
+              <p className="text-[12px] text-text-muted mb-4">Upload at least 3 photos and an optional short video.</p>
               <div className="grid grid-cols-3 gap-2 mb-4">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="aspect-square border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-text-muted transition-colors">
+                {photos.map((url, i) => (
+                  <div key={url} className="relative aspect-square rounded-lg overflow-hidden border border-border bg-input">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => removePhoto(i)}
+                      type="button"
+                      className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 text-white text-[10px] border-none cursor-pointer flex items-center justify-center"
+                      aria-label="Remove photo"
+                    >
+                      ×
+                    </button>
+                    {i === 0 && (
+                      <span className="absolute bottom-1 left-1 text-[9px] px-1 py-px rounded bg-white/90 text-text-primary font-semibold">Main</span>
+                    )}
+                  </div>
+                ))}
+                {photos.length < 10 && (
+                  <label className="aspect-square border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-text-muted transition-colors">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => handlePhotoUpload(e.target.files)}
+                    />
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#bbb" strokeWidth="1.5">
                       <path d="M12 5v14M5 12h14" />
                     </svg>
-                    <span className="text-[9px] text-text-faint mt-1">{i === 0 ? "Main" : `Photo ${i + 1}`}</span>
-                  </div>
-                ))}
+                    <span className="text-[9px] text-text-faint mt-1">Add photo</span>
+                  </label>
+                )}
               </div>
-              <div className="border-2 border-dashed border-border rounded-lg p-4 text-center cursor-pointer hover:border-text-muted transition-colors">
-                <svg className="mx-auto mb-1" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#bbb" strokeWidth="1.5">
-                  <polygon points="23 7 16 12 23 17 23 7" />
-                  <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
-                </svg>
-                <p className="text-[11px] text-text-muted">Upload video (required, 15-60 sec)</p>
-              </div>
+              <label className="block border-2 border-dashed border-border rounded-lg p-4 text-center cursor-pointer hover:border-text-muted transition-colors">
+                <input
+                  type="file"
+                  accept="video/mp4,video/quicktime"
+                  className="hidden"
+                  onChange={(e) => handleVideoUpload(e.target.files?.[0] || null)}
+                />
+                {videoUrl ? (
+                  <>
+                    <p className="text-[12px] text-text-primary font-semibold">Video uploaded</p>
+                    <p className="text-[10px] text-text-muted mt-0.5">Tap to replace</p>
+                  </>
+                ) : (
+                  <>
+                    <svg className="mx-auto mb-1" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#bbb" strokeWidth="1.5">
+                      <polygon points="23 7 16 12 23 17 23 7" />
+                      <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                    </svg>
+                    <p className="text-[11px] text-text-muted">Upload video (15–60 sec, optional)</p>
+                  </>
+                )}
+              </label>
+              {uploading && <p className="text-[11px] text-text-muted mt-2">Uploading…</p>}
+              {uploadError && <p className="text-[11px] text-condition-rough-text mt-2">{uploadError}</p>}
+              {photos.length < 3 && !uploading && (
+                <p className="text-[11px] text-text-muted mt-2">At least 3 photos required to continue.</p>
+              )}
             </>
           )}
 
@@ -409,6 +494,8 @@ export default function ListingWizard({ catalog }: ListingWizardProps) {
                     price: parseInt(price),
                     originalPrice: originalPrice ? parseInt(originalPrice) : undefined,
                     description: description || undefined,
+                    photos,
+                    videoUrl: videoUrl || undefined,
                   });
                   if (result.error) {
                     setSubmitError(result.error);

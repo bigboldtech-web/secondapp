@@ -67,10 +67,15 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
           {/* Left column — Photos + Details */}
           <div>
-            {/* Photo gallery placeholder */}
+            {/* Photo gallery */}
             <div className="bg-card border border-border rounded-[10px] overflow-hidden mb-4">
               <div className="aspect-[4/3] bg-input flex items-center justify-center relative">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="#ccc"><path d={icon} /></svg>
+                {listing.photos.length > 0 ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={listing.photos[0]} alt={listing.product.displayName} className="w-full h-full object-cover" />
+                ) : (
+                  <svg width="64" height="64" viewBox="0 0 24 24" fill="#ccc"><path d={icon} /></svg>
+                )}
                 <span className={`absolute bottom-3 left-3 text-xs px-2 py-1 font-semibold rounded ${condStyle.bg} ${condStyle.text}`}>
                   {listing.condition}
                 </span>
@@ -85,6 +90,14 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
                   </span>
                 )}
               </div>
+              {listing.photos.length > 1 && (
+                <div className="flex gap-2 p-2 overflow-x-auto">
+                  {listing.photos.slice(0, 6).map((url, i) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img key={url} src={url} alt={`Photo ${i + 1}`} className="w-16 h-16 object-cover rounded border border-border shrink-0" />
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Specs table */}
