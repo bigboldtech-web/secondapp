@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-coral: #E8553D;
+  --color-coral-light: #fdf4f3;
+  --color-coral-border: #f0d0ca;
+
+  --color-bg: #fafafa;
+  --color-card: #ffffff;
+  --color-border: #eeeeee;
+  --color-input: #f0f0f0;
+  --color-input-light: #f5f5f5;
+
+  --color-text-primary: #222222;
+  --color-text-secondary: #999999;
+  --color-text-muted: #aaaaaa;
+  --color-text-faint: #bbbbbb;
+
+  --color-icon-active: #555555;
+  --color-icon-inactive: #bbbbbb;
+
+  --color-condition-likenew-bg: #f0fdf4;
+  --color-condition-likenew-text: #166534;
+  --color-condition-excellent-bg: #eff6ff;
+  --color-condition-excellent-text: #1e40af;
+  --color-condition-good-bg: #fffbeb;
+  --color-condition-good-text: #92400e;
+  --color-condition-better-bg: #f0f9ff;
+  --color-condition-better-text: #075985;
+  --color-condition-rough-bg: #fef2f2;
+  --color-condition-rough-text: #991b1b;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Tailwind v4 includes its own reset (preflight), no need for manual reset */
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+}
+
+::placeholder {
+  color: var(--color-text-faint);
+}
+
+input:focus {
+  outline: none;
+}
+
+/* Hide scrollbar for category pills */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Fade-in animation for cards */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.2s ease both;
+}

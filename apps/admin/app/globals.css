@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-coral: #E8553D;
+  --color-coral-light: #fdf4f3;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+  background: #f8f9fa;
+  color: #222;
+  font-family: var(--font-sans);
+}

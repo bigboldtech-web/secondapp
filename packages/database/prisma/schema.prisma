@@ -1,0 +1,355 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// USERS & AUTH
+// ============================================================
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String?  @unique
+  phone        String?  @unique
+  passwordHash String?
+  role         String   @default("buyer") // buyer | vendor | admin
+  avatarUrl    String?
+  locationCity String?
+  locationLat  Float?
+  locationLng  Float?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  vendor        Vendor?
+  orders        Order[]        @relation("BuyerOrders")
+  reviews       Review[]
+  alerts        Alert[]
+  notifications Notification[]
+  chatsBuyer    Chat[]         @relation("BuyerChats")
+  messages      Message[]
+  collections   Collection[]
+  reactions     ListingReaction[]
+  comments      ListingComment[]
+}
+
+// ============================================================
+// VENDORS
+// ============================================================
+
+model Vendor {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  storeName          String
+  storeSlug          String   @unique
+  logoUrl            String?
+  bannerUrl          String?
+  bio                String?
+  locationAddress    String?
+  locationCity       String?
+  kycStatus          String   @default("pending") // pending | verified | rejected
+  kycDocuments       String?  // JSON string
+  certificationLevel String   @default("unverified") // unverified | verified | trusted | premium
+  ratingAvg          Float    @default(0)
+  ratingCount        Int      @default(0)
+  totalSales         Int      @default(0)
+  totalListings      Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id])
+  listings Listing[]
+  orders   Order[]   @relation("VendorOrders")
+  reviews  Review[]
+  chats    Chat[]    @relation("VendorChats")
+}
+
+// ============================================================
+// PRODUCT CATALOG (Admin-managed master data)
+// ============================================================
+
+model Category {
+  id             String   @id @default(cuid())
+  name           String
+  slug           String   @unique
+  parentId       String?
+  icon           String?
+  specTemplate   String?  // JSON string - defines what specs this category supports
+  conditionScale String?  // JSON string - condition options for this category
+  sortOrder      Int      @default(0)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryHierarchy")
+  brands   Brand[]
+  products Product[]
+}
+
+model Brand {
+  id         String   @id @default(cuid())
+  categoryId String
+  name       String
+  slug       String   @unique
+  logoUrl    String?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  category Category @relation(fields: [categoryId], references: [id])
+  models   Model[]
+  products Product[]
+}
+
+model Model {
+  id            String   @id @default(cuid())
+  brandId       String
+  name          String
+  slug          String   @unique
+  specsTemplate String?  // JSON string - available spec options (storage, RAM, colors, etc.)
+  imageUrl      String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  brand    Brand     @relation(fields: [brandId], references: [id])
+  products Product[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  categoryId  String
+  brandId     String
+  modelId     String
+  slug        String   @unique
+  displayName String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  category Category  @relation(fields: [categoryId], references: [id])
+  brand    Brand     @relation(fields: [brandId], references: [id])
+  model    Model     @relation(fields: [modelId], references: [id])
+  listings Listing[]
+  alerts   Alert[]
+}
+
+// ============================================================
+// LISTINGS
+// ============================================================
+
+model Listing {
+  id              String    @id @default(cuid())
+  productId       String
+  vendorId        String
+  specs           String?   // JSON string - actual specs (storage: "128GB", color: "Black", etc.)
+  condition       String    // Like New | Best | Better | Good | Rough
+  price           Int       // price in paise/cents for precision
+  originalPrice   Int?
+  description     String?
+  photos          String?   // JSON string array of URLs
+  videoUrl        String?
+  status          String    @default("draft") // draft | pending | active | sold | expired | rejected
+  isFeatured      Boolean   @default(false)
+  isPromoted      Boolean   @default(false)
+  promotedUntil   DateTime?
+  adminCertified  Boolean   @default(false)
+  rejectionReason String?
+  viewCount       Int       @default(0)
+  inquiryCount    Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  product   Product          @relation(fields: [productId], references: [id])
+  vendor    Vendor           @relation(fields: [vendorId], references: [id])
+  orders    Order[]
+  reviews   Review[]
+  chats     Chat[]
+  reactions ListingReaction[]
+  comments  ListingComment[]
+  collectionItems CollectionItem[]
+}
+
+// ============================================================
+// ORDERS & PAYMENTS
+// ============================================================
+
+model Order {
+  id               String   @id @default(cuid())
+  listingId        String
+  buyerId          String
+  vendorId         String
+  amount           Int      // in paise
+  commissionAmount Int      @default(0)
+  paymentStatus    String   @default("pending") // pending | held | released | refunded
+  orderStatus      String   @default("placed") // placed | confirmed | shipped | delivered | cancelled | disputed
+  paymentId        String?
+  escrowId         String?
+  shippingAddress  String?  // JSON string
+  trackingNumber   String?
+  trackingUrl      String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  listing Listing  @relation(fields: [listingId], references: [id])
+  buyer   User     @relation("BuyerOrders", fields: [buyerId], references: [id])
+  vendor  Vendor   @relation("VendorOrders", fields: [vendorId], references: [id])
+  reviews Review[]
+}
+
+// ============================================================
+// OTP VERIFICATION
+// ============================================================
+
+model OtpVerification {
+  id        String   @id @default(cuid())
+  phone     String
+  code      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+// ============================================================
+// REVIEWS
+// ============================================================
+
+model Review {
+  id                String   @id @default(cuid())
+  orderId           String
+  buyerId           String
+  vendorId          String
+  listingId         String
+  rating            Int
+  comment           String?
+  isVerifiedPurchase Boolean @default(true)
+  createdAt         DateTime @default(now())
+
+  order   Order   @relation(fields: [orderId], references: [id])
+  buyer   User    @relation(fields: [buyerId], references: [id])
+  vendor  Vendor  @relation(fields: [vendorId], references: [id])
+  listing Listing @relation(fields: [listingId], references: [id])
+}
+
+// ============================================================
+// DEAL ALERTS
+// ============================================================
+
+model Alert {
+  id            String    @id @default(cuid())
+  userId        String
+  productId     String
+  filters       String?   // JSON string
+  maxPrice      Int?
+  conditionMin  String?
+  isActive      Boolean   @default(true)
+  lastTriggered DateTime?
+  createdAt     DateTime  @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+}
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // alert | order | chat | system | promotion
+  title     String
+  body      String?
+  data      String?  // JSON string
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+// ============================================================
+// CHAT & MESSAGING
+// ============================================================
+
+model Chat {
+  id            String    @id @default(cuid())
+  listingId     String
+  buyerId       String
+  vendorId      String
+  lastMessageAt DateTime?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+
+  listing  Listing   @relation(fields: [listingId], references: [id])
+  buyer    User      @relation("BuyerChats", fields: [buyerId], references: [id])
+  vendor   Vendor    @relation("VendorChats", fields: [vendorId], references: [id])
+  messages Message[]
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  chatId    String
+  senderId  String
+  content   String
+  type      String   @default("text") // text | image | system
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  chat   Chat @relation(fields: [chatId], references: [id])
+  sender User @relation(fields: [senderId], references: [id])
+}
+
+// ============================================================
+// COLLECTIONS & SOCIAL
+// ============================================================
+
+model Collection {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  isPublic  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user  User             @relation(fields: [userId], references: [id])
+  items CollectionItem[]
+}
+
+model CollectionItem {
+  id           String   @id @default(cuid())
+  collectionId String
+  listingId    String
+  addedAt      DateTime @default(now())
+
+  collection Collection @relation(fields: [collectionId], references: [id])
+  listing    Listing    @relation(fields: [listingId], references: [id])
+}
+
+model ListingReaction {
+  id        String   @id @default(cuid())
+  listingId String
+  userId    String
+  type      String   // like | helpful | great_price
+  createdAt DateTime @default(now())
+
+  listing Listing @relation(fields: [listingId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@unique([listingId, userId, type])
+}
+
+model ListingComment {
+  id        String   @id @default(cuid())
+  listingId String
+  userId    String
+  comment   String
+  createdAt DateTime @default(now())
+
+  listing Listing @relation(fields: [listingId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+}
