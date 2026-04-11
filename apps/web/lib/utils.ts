@@ -37,6 +37,16 @@ export function parseSpecs(specsJson: string | null): Record<string, string> {
   }
 }
 
+export function parsePhotos(photosJson: string | null): string[] {
+  if (!photosJson) return [];
+  try {
+    const parsed = JSON.parse(photosJson);
+    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
 /**
  * Calculate discount percentage
  */

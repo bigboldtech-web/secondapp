@@ -33,6 +33,7 @@ export interface ListingCardData {
   originalPrice: number | null;
   condition: string;
   specs: Record<string, string>;
+  thumbnail: string | null;
   vendorName: string;
   vendorSlug: string;
   vendorCertification: string;
@@ -66,6 +67,7 @@ export interface ProductListingData {
   originalPrice: number | null;
   condition: string;
   specs: Record<string, string>;
+  thumbnail: string | null;
   description: string | null;
   vendorName: string;
   vendorSlug: string;

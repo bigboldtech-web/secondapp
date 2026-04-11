@@ -1,5 +1,5 @@
 import { prisma } from "@second-app/database";
-import { parseSpecs } from "./utils";
+import { parseSpecs, parsePhotos } from "./utils";
 import type {
   ListingCardData,
   ProductDetail,
@@ -130,6 +130,7 @@ export async function getListings(filters: ListingFilters = {}): Promise<Listing
     originalPrice: l.originalPrice,
     condition: l.condition,
     specs: parseSpecs(l.specs),
+    thumbnail: parsePhotos(l.photos)[0] ?? null,
     vendorName: l.vendor.storeName,
     vendorSlug: l.vendor.storeSlug,
     vendorCertification: l.vendor.certificationLevel,
@@ -199,6 +200,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
       originalPrice: l.originalPrice,
       condition: l.condition,
       specs: parseSpecs(l.specs),
+      thumbnail: parsePhotos(l.photos)[0] ?? null,
       description: l.description,
       vendorName: l.vendor.storeName,
       vendorSlug: l.vendor.storeSlug,
@@ -315,6 +317,7 @@ export async function getSimilarListings(
     originalPrice: l.originalPrice,
     condition: l.condition,
     specs: parseSpecs(l.specs),
+    thumbnail: parsePhotos(l.photos)[0] ?? null,
     vendorName: l.vendor.storeName,
     vendorSlug: l.vendor.storeSlug,
     vendorCertification: l.vendor.certificationLevel,
@@ -378,6 +381,7 @@ export async function getVendorBySlug(slug: string): Promise<VendorProfile | nul
       originalPrice: l.originalPrice,
       condition: l.condition,
       specs: parseSpecs(l.specs),
+      thumbnail: parsePhotos(l.photos)[0] ?? null,
       vendorName: vendor.storeName,
       vendorSlug: vendor.storeSlug,
       vendorCertification: vendor.certificationLevel,

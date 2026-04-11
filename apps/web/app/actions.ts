@@ -133,6 +133,7 @@ export async function getMySavedListings() {
     .map((item) => {
       const l = item.listing;
       const specs: Record<string, string> = l.specs ? JSON.parse(l.specs) : {};
+      const photos: string[] = l.photos ? (() => { try { const p = JSON.parse(l.photos); return Array.isArray(p) ? p : []; } catch { return []; } })() : [];
       return {
         id: l.id,
         title: l.product.displayName,
@@ -140,6 +141,7 @@ export async function getMySavedListings() {
         originalPrice: l.originalPrice,
         condition: l.condition,
         specs,
+        thumbnail: photos[0] ?? null,
         vendorName: l.vendor.storeName,
         vendorSlug: l.vendor.storeSlug,
         vendorCertification: l.vendor.certificationLevel,

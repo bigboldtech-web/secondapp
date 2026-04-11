@@ -297,9 +297,14 @@ function ListingCard({ listing, categorySlug, isLowestPrice, rank, totalListings
       <div className={`bg-card border overflow-hidden hover:-translate-y-px hover:shadow-[0_2px_16px_rgba(0,0,0,0.06)] transition-all cursor-pointer rounded-[10px] ${
         isLowestPrice ? "border-coral-border ring-1 ring-coral/20" : "border-border"
       }`}>
-        {/* Image placeholder */}
+        {/* Image */}
         <div className="aspect-[16/9] bg-input flex items-center justify-center relative">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="#ccc"><path d={icon} /></svg>
+          {listing.thumbnail ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={listing.thumbnail} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="#ccc"><path d={icon} /></svg>
+          )}
           <span className={`absolute bottom-2 left-2 text-[10px] px-1.5 py-0.5 font-semibold rounded-[3px] ${condStyle.bg} ${condStyle.text}`}>
             {listing.condition}
           </span>

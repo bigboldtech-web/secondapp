@@ -28,9 +28,14 @@ export default function ProductCard({ item, compact = false }: ProductCardProps)
             compact ? "aspect-square" : "aspect-[4/3]"
           }`}
         >
-          <svg width={compact ? 24 : 32} height={compact ? 24 : 32} viewBox="0 0 24 24" fill="#ccc">
-            <path d={icon} />
-          </svg>
+          {item.thumbnail ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={item.thumbnail} alt={item.title} className="w-full h-full object-cover" />
+          ) : (
+            <svg width={compact ? 24 : 32} height={compact ? 24 : 32} viewBox="0 0 24 24" fill="#ccc">
+              <path d={icon} />
+            </svg>
+          )}
 
           <span
             className={`absolute ${compact ? "bottom-1 left-1 text-[9px] px-1 py-px" : "bottom-2 left-2 text-[10px] px-1.5 py-0.5"} font-semibold rounded-[3px] ${condStyle.bg} ${condStyle.text}`}
