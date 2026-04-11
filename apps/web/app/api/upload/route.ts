@@ -3,8 +3,42 @@ import { getSession } from "@/lib/auth";
 import { uploadFile } from "@/lib/storage";
 import { prisma } from "@second-app/database";
 
-const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
-const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "video/mp4", "video/quicktime"]);
+type UploadKind = "listing-photo" | "listing-video" | "store-logo" | "store-banner";
+
+interface KindSpec {
+  folder: string;
+  allow: Set<string>;
+  maxBytes: number;
+}
+
+const KIND_SPECS: Record<UploadKind, KindSpec> = {
+  "listing-photo": {
+    folder: "listings/photos",
+    allow: new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]),
+    maxBytes: 10 * 1024 * 1024,
+  },
+  "listing-video": {
+    folder: "listings/video",
+    allow: new Set(["video/mp4", "video/quicktime"]),
+    maxBytes: 30 * 1024 * 1024,
+  },
+  "store-logo": {
+    folder: "store/logo",
+    allow: new Set(["image/jpeg", "image/png", "image/webp"]),
+    maxBytes: 2 * 1024 * 1024,
+  },
+  "store-banner": {
+    folder: "store/banner",
+    allow: new Set(["image/jpeg", "image/png", "image/webp"]),
+    maxBytes: 5 * 1024 * 1024,
+  },
+};
+
+function resolveKind(raw: FormDataEntryValue | null, contentType: string): UploadKind {
+  if (typeof raw === "string" && raw in KIND_SPECS) return raw as UploadKind;
+  // Back-compat: older clients don't send `kind`. Infer from content type.
+  return contentType.startsWith("video/") ? "listing-video" : "listing-photo";
+}
 
 export async function POST(req: Request) {
   const session = await getSession();
@@ -16,18 +50,27 @@ export async function POST(req: Request) {
   const form = await req.formData();
   const file = form.get("file");
   if (!(file instanceof File)) return NextResponse.json({ error: "No file" }, { status: 400 });
-  if (file.size > MAX_BYTES) return NextResponse.json({ error: "File too large (max 10MB)" }, { status: 413 });
-  if (!ALLOWED.has(file.type)) return NextResponse.json({ error: "Unsupported file type" }, { status: 415 });
+
+  const kind = resolveKind(form.get("kind"), file.type);
+  const spec = KIND_SPECS[kind];
+
+  if (file.size > spec.maxBytes) {
+    return NextResponse.json(
+      { error: `File too large (max ${Math.round(spec.maxBytes / 1024 / 1024)}MB for ${kind})` },
+      { status: 413 }
+    );
+  }
+  if (!spec.allow.has(file.type)) {
+    return NextResponse.json({ error: `Unsupported file type for ${kind}` }, { status: 415 });
+  }
 
   const buffer = Buffer.from(await file.arrayBuffer());
-  const folder = file.type.startsWith("video/") ? "listings/video" : "listings/photos";
-
   const result = await uploadFile({
     buffer,
     filename: file.name,
     contentType: file.type,
-    folder,
+    folder: spec.folder,
   });
 
-  return NextResponse.json({ url: result.url, provider: result.provider });
+  return NextResponse.json({ url: result.url, provider: result.provider, kind });
 }

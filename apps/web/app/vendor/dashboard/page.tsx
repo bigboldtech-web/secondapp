@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@second-app/database";
 import { getSession } from "@/lib/auth";
 import { parsePhotos } from "@/lib/utils";
+import ShareStoreButton from "./ShareStoreButton";
 
 export const dynamic = "force-dynamic";
 
@@ -63,7 +64,11 @@ export default async function VendorDashboard() {
             <span className="text-[12px] font-medium text-text-muted">Vendor Dashboard</span>
           </div>
           <div className="flex items-center gap-2">
-            <Link href={`/store/${vendor.storeSlug}`} className="px-3 py-1.5 rounded-md border border-border text-[12px] font-medium text-text-primary no-underline">
+            <Link href="/vendor/store/edit" className="px-3 py-1.5 rounded-md border border-border text-[12px] font-medium text-text-primary no-underline hidden sm:inline">
+              Edit store
+            </Link>
+            <ShareStoreButton storeSlug={vendor.storeSlug} storeName={vendor.storeName} />
+            <Link href={`/store/${vendor.storeSlug}`} className="px-3 py-1.5 rounded-md border border-border text-[12px] font-medium text-text-primary no-underline hidden sm:inline">
               View public store
             </Link>
             <Link href="/vendor/listings/new" className="px-3.5 py-1.5 rounded-md bg-coral text-white text-xs font-semibold no-underline">
@@ -203,15 +208,15 @@ export default async function VendorDashboard() {
             <p className="text-sm font-semibold text-text-primary">Post New Listing</p>
             <p className="text-[11px] text-text-muted">Add a product to sell</p>
           </Link>
-          <Link href={`/store/${vendor.storeSlug}`} className="bg-card border border-border rounded-[10px] px-4 py-4 no-underline hover:shadow-sm transition-shadow text-center">
+          <Link href="/vendor/store/edit" className="bg-card border border-border rounded-[10px] px-4 py-4 no-underline hover:shadow-sm transition-shadow text-center">
             <div className="w-10 h-10 rounded-full bg-condition-excellent-bg flex items-center justify-center mx-auto mb-2">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1e40af" strokeWidth="2">
-                <path d="M3 3h18v4H3z" />
-                <path d="M5 7v13h14V7" />
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
               </svg>
             </div>
-            <p className="text-sm font-semibold text-text-primary">View public store</p>
-            <p className="text-[11px] text-text-muted">See what buyers see</p>
+            <p className="text-sm font-semibold text-text-primary">Customize store</p>
+            <p className="text-[11px] text-text-muted">Logo, banner, bio &amp; city</p>
           </Link>
           <Link href="/vendor/listings/manage" className="bg-card border border-border rounded-[10px] px-4 py-4 no-underline hover:shadow-sm transition-shadow text-center">
             <div className="w-10 h-10 rounded-full bg-condition-good-bg flex items-center justify-center mx-auto mb-2">

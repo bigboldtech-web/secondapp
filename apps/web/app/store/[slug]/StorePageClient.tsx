@@ -34,7 +34,11 @@ export default function StorePageClient({ vendor }: StorePageClientProps) {
       </header>
 
       {/* Store banner */}
-      <div className="bg-input h-32 sm:h-44 relative">
+      <div className="bg-input h-32 sm:h-44 relative overflow-hidden">
+        {vendor.bannerUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={vendor.bannerUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        )}
         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/20 to-transparent" />
       </div>
 
@@ -42,8 +46,13 @@ export default function StorePageClient({ vendor }: StorePageClientProps) {
         {/* Store info */}
         <div className="relative -mt-8 mb-5">
           <div className="flex items-end gap-4">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white border-4 border-white shadow-sm flex items-center justify-center text-xl font-bold text-text-muted">
-              {vendor.storeName.charAt(0)}
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white border-4 border-white shadow-sm flex items-center justify-center text-xl font-bold text-text-muted overflow-hidden">
+              {vendor.logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={vendor.logoUrl} alt={`${vendor.storeName} logo`} className="w-full h-full object-cover" />
+              ) : (
+                vendor.storeName.charAt(0)
+              )}
             </div>
             <div className="pb-1">
               <div className="flex items-center gap-2">
