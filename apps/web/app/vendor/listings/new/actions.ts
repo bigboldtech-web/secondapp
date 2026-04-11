@@ -1,6 +1,8 @@
 "use server";
 
 import { prisma } from "@second-app/database";
+import { getSession } from "@/lib/auth";
+import { revalidatePath } from "next/cache";
 
 interface CreateListingInput {
   categoryId: string;
@@ -11,20 +13,27 @@ interface CreateListingInput {
   price: number; // in rupees
   originalPrice?: number;
   description?: string;
+  photos?: string[];
+  videoUrl?: string;
 }
 
 export async function createListing(input: CreateListingInput) {
-  // Find or create the product for this category+brand+model combo
+  const session = await getSession();
+  if (!session) return { error: "Please log in first" };
+
+  const vendor = await prisma.vendor.findUnique({ where: { userId: session.userId } });
+  if (!vendor) return { error: "You must register as a vendor before posting listings" };
+
+  if (!input.price || input.price <= 0) return { error: "Please enter a valid price" };
+  if (!input.condition) return { error: "Please select a condition" };
+
   const model = await prisma.model.findUnique({
     where: { id: input.modelId },
     include: { brand: true },
   });
+  if (!model) return { error: "Model not found" };
+  if (model.brandId !== input.brandId) return { error: "Model does not belong to the selected brand" };
 
-  if (!model) {
-    return { error: "Model not found" };
-  }
-
-  // Find existing product or create one
   let product = await prisma.product.findFirst({
     where: {
       categoryId: input.categoryId,
@@ -46,14 +55,8 @@ export async function createListing(input: CreateListingInput) {
     });
   }
 
-  // For MVP, use the first vendor (in production, this would come from the authenticated user session)
-  const vendor = await prisma.vendor.findFirst({
-    orderBy: { createdAt: "asc" },
-  });
-
-  if (!vendor) {
-    return { error: "No vendor found. Please register as a vendor first." };
-  }
+  // Trusted and premium vendors skip moderation.
+  const autoApprove = vendor.certificationLevel === "trusted" || vendor.certificationLevel === "premium";
 
   const listing = await prisma.listing.create({
     data: {
@@ -61,12 +64,22 @@ export async function createListing(input: CreateListingInput) {
       vendorId: vendor.id,
       specs: JSON.stringify(input.specs),
       condition: input.condition,
-      price: input.price * 100, // Convert to paise
-      originalPrice: input.originalPrice ? input.originalPrice * 100 : null,
+      price: Math.round(input.price * 100),
+      originalPrice: input.originalPrice ? Math.round(input.originalPrice * 100) : null,
       description: input.description || null,
-      status: "pending", // Goes to moderation queue
+      photos: input.photos && input.photos.length > 0 ? JSON.stringify(input.photos) : null,
+      videoUrl: input.videoUrl || null,
+      status: autoApprove ? "active" : "pending",
     },
   });
 
-  return { success: true, listingId: listing.id };
+  await prisma.vendor.update({
+    where: { id: vendor.id },
+    data: { totalListings: { increment: 1 } },
+  });
+
+  revalidatePath("/vendor/listings/manage");
+  revalidatePath("/vendor/dashboard");
+
+  return { success: true, listingId: listing.id, autoApproved: autoApprove };
 }

@@ -568,6 +568,24 @@ async function main() {
   }
 
   // ============================================================
+  // ADMIN USER
+  // ============================================================
+  console.log("  Creating admin user...");
+
+  await prisma.user.create({
+    data: {
+      name: "Second App Admin",
+      email: "admin@gosecond.in",
+      phone: "9999999999",
+      role: "admin",
+      locationCity: "Mumbai",
+      isActive: true,
+    },
+  });
+
+  console.log("  ✅ Admin login: phone 9999999999, OTP 123456");
+
+  // ============================================================
   // SUMMARY
   // ============================================================
   const counts = {
