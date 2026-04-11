@@ -138,8 +138,15 @@ export interface VendorProfile {
   totalSales: number;
   totalListings: number;
   createdAt: Date;
-  listings: ListingCardData[];
+  listings: StoreListing[];
   reviews: VendorReview[];
+}
+
+// Richer than ListingCardData: also carries videoUrl + photo count so the
+// store page can render a dedicated Videos rail alongside the listings grid.
+export interface StoreListing extends ListingCardData {
+  videoUrl: string | null;
+  photoCount: number;
 }
 
 export interface VendorReview {

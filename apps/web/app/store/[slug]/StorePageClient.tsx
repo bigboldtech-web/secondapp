@@ -18,8 +18,9 @@ interface StorePageClientProps {
 }
 
 export default function StorePageClient({ vendor }: StorePageClientProps) {
-  const [activeTab, setActiveTab] = useState<"listings" | "reviews" | "about">("listings");
+  const [activeTab, setActiveTab] = useState<"listings" | "videos" | "reviews" | "about">("listings");
   const cert = CERT_LABELS[vendor.certificationLevel] || CERT_LABELS.unverified;
+  const videoListings = vendor.listings.filter((l) => l.videoUrl);
 
   return (
     <div className="min-h-screen bg-bg">
@@ -74,20 +75,31 @@ export default function StorePageClient({ vendor }: StorePageClientProps) {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-0 border-b border-border mb-4">
-          {(["listings", "reviews", "about"] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2.5 text-[13px] font-medium border-b-2 -mb-px cursor-pointer bg-transparent capitalize ${
-                activeTab === tab
-                  ? "border-coral text-coral"
-                  : "border-transparent text-text-muted hover:text-text-secondary"
-              }`}
-            >
-              {tab} {tab === "listings" ? `(${vendor.listings.length})` : tab === "reviews" ? `(${vendor.reviews.length})` : ""}
-            </button>
-          ))}
+        <div className="flex gap-0 border-b border-border mb-4 overflow-x-auto">
+          {(["listings", "videos", "reviews", "about"] as const).map((tab) => {
+            const count =
+              tab === "listings"
+                ? vendor.listings.length
+                : tab === "videos"
+                  ? videoListings.length
+                  : tab === "reviews"
+                    ? vendor.reviews.length
+                    : null;
+            return (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-2.5 text-[13px] font-medium border-b-2 -mb-px cursor-pointer bg-transparent capitalize shrink-0 ${
+                  activeTab === tab
+                    ? "border-coral text-coral"
+                    : "border-transparent text-text-muted hover:text-text-secondary"
+                }`}
+              >
+                {tab}
+                {count !== null ? ` (${count})` : ""}
+              </button>
+            );
+          })}
         </div>
 
         {/* Tab content */}
@@ -98,6 +110,42 @@ export default function StorePageClient({ vendor }: StorePageClientProps) {
             ))}
             {vendor.listings.length === 0 && (
               <p className="col-span-full text-center py-8 text-text-muted text-sm">No active listings</p>
+            )}
+          </div>
+        )}
+
+        {activeTab === "videos" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-8">
+            {videoListings.map((item) => (
+              <div key={item.id} className="bg-card border border-border rounded-[10px] overflow-hidden">
+                <video
+                  src={item.videoUrl ?? undefined}
+                  controls
+                  preload="metadata"
+                  playsInline
+                  poster={item.thumbnail ?? undefined}
+                  className="w-full aspect-video bg-black object-cover"
+                />
+                <div className="px-3 py-2.5">
+                  <p className="text-[13px] font-semibold text-text-primary truncate">{item.title}</p>
+                  <div className="flex items-baseline justify-between mt-0.5">
+                    <span className="text-[13px] font-bold text-coral">
+                      ₹{Math.round(item.price / 100).toLocaleString("en-IN")}
+                    </span>
+                    <Link
+                      href={`/listing/${item.id}`}
+                      className="text-[11px] text-text-muted hover:text-text-primary no-underline"
+                    >
+                      View listing →
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {videoListings.length === 0 && (
+              <p className="col-span-full text-center py-8 text-text-muted text-sm">
+                No videos yet. Vendors are encouraged to upload a short video with every listing.
+              </p>
             )}
           </div>
         )}
