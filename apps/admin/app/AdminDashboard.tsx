@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { approveVendorKyc, rejectVendorKyc, upgradeVendor, approveListing, rejectListing, certifyListing } from "./actions";
 
@@ -119,6 +120,16 @@ export default function AdminDashboard({ stats, recentListings, recentVendors, c
               )}
             </button>
           ))}
+          <Link
+            href="/search-insights"
+            className="w-full flex items-center gap-2.5 px-5 py-2.5 text-[13px] font-medium text-[#666] hover:bg-[#f8f8f8] no-underline"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <path d="M21 21l-4.35-4.35" />
+            </svg>
+            Search insights
+          </Link>
         </nav>
       </aside>
 
