@@ -5,7 +5,25 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ListingDetail } from "@/lib/types";
 import { formatPrice, calcDiscount } from "@/lib/utils";
-import { createOrder } from "./actions";
+import { createOrder, confirmRazorpayPayment } from "./actions";
+
+declare global {
+  interface Window {
+    Razorpay?: new (opts: Record<string, unknown>) => { open: () => void };
+  }
+}
+
+function loadRazorpayScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined") return resolve(false);
+    if (window.Razorpay) return resolve(true);
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
 
 interface CheckoutClientProps {
   listing: ListingDetail;
@@ -41,9 +59,54 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
     if (result.error) {
       setOrderError(result.error);
       setPlacing(false);
-    } else {
-      router.push(`/order/success?orderId=${result.orderId}`);
+      return;
     }
+
+    const needsGateway = paymentMethod !== "cod" && result.provider === "razorpay" && result.paymentOrderId && result.razorpayKeyId;
+
+    if (!needsGateway) {
+      router.push(`/order/success?orderId=${result.orderId}`);
+      return;
+    }
+
+    const loaded = await loadRazorpayScript();
+    if (!loaded || !window.Razorpay) {
+      setOrderError("Could not load payment gateway. Please retry.");
+      setPlacing(false);
+      return;
+    }
+
+    const rzp = new window.Razorpay({
+      key: result.razorpayKeyId,
+      order_id: result.paymentOrderId,
+      amount: result.amount,
+      currency: "INR",
+      name: "Second App",
+      description: listing.product.displayName,
+      prefill: { name, contact: phone },
+      theme: { color: "#E8553D" },
+      handler: async (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
+        const verify = await confirmRazorpayPayment({
+          orderId: result.orderId!,
+          razorpayOrderId: response.razorpay_order_id,
+          razorpayPaymentId: response.razorpay_payment_id,
+          razorpaySignature: response.razorpay_signature,
+        });
+        if (verify.error) {
+          setOrderError(verify.error);
+          setPlacing(false);
+          return;
+        }
+        router.push(`/order/success?orderId=${result.orderId}`);
+      },
+      modal: {
+        ondismiss: () => {
+          setOrderError("Payment cancelled. You can retry from your orders page.");
+          setPlacing(false);
+        },
+      },
+    });
+    rzp.open();
   };
 
   return (

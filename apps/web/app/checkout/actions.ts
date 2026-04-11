@@ -2,6 +2,7 @@
 
 import { prisma } from "@second-app/database";
 import { getSession } from "@/lib/auth";
+import { createPaymentOrder, paymentProvider, verifyPaymentSignature } from "@/lib/payments";
 
 export async function createOrder(data: {
   listingId: string;
@@ -19,6 +20,15 @@ export async function createOrder(data: {
   if (!listing || listing.status !== "active") return { error: "Listing no longer available" };
 
   const commissionRate = 0.07; // 7%
+  const isCod = data.paymentMethod === "cod";
+
+  const provider = paymentProvider();
+  // mock mode settles instantly; real Razorpay stays "pending" until client verifies.
+  const initialPaymentStatus = isCod
+    ? "pending"
+    : provider === "mock"
+      ? "held"
+      : "pending";
 
   const order = await prisma.order.create({
     data: {
@@ -27,28 +37,86 @@ export async function createOrder(data: {
       vendorId: listing.vendorId,
       amount: listing.price,
       commissionAmount: Math.floor(listing.price * commissionRate),
-      paymentStatus: data.paymentMethod === "cod" ? "pending" : "held",
+      paymentStatus: initialPaymentStatus,
       orderStatus: "placed",
       shippingAddress: JSON.stringify(data.shippingAddress),
     },
   });
 
-  // Mark listing as sold
+  // Reserve the listing so it can't be double-sold while payment is in progress.
   await prisma.listing.update({
     where: { id: listing.id },
     data: { status: "sold" },
   });
 
-  // Notify vendor
+  let payment: Awaited<ReturnType<typeof createPaymentOrder>> | null = null;
+  if (!isCod) {
+    try {
+      payment = await createPaymentOrder({
+        amount: listing.price,
+        receipt: order.id,
+        notes: { orderId: order.id, buyerId: session.userId, vendorId: listing.vendorId },
+      });
+
+      await prisma.order.update({
+        where: { id: order.id },
+        data: { paymentId: payment.externalId },
+      });
+    } catch (err) {
+      // Roll back the reservation if payment gateway is unavailable.
+      await prisma.listing.update({ where: { id: listing.id }, data: { status: "active" } });
+      await prisma.order.update({
+        where: { id: order.id },
+        data: { orderStatus: "cancelled", paymentStatus: "refunded" },
+      });
+      return { error: "Payment gateway unavailable. Please try again." };
+    }
+  }
+
   await prisma.notification.create({
     data: {
       userId: listing.vendor.userId,
       type: "order",
       title: "New order received!",
-      body: `Order for ${listing.price / 100} received. Please confirm within 24 hours.`,
+      body: `Order for ₹${(listing.price / 100).toLocaleString("en-IN")} received. Please confirm within 24 hours.`,
       data: JSON.stringify({ link: `/vendor/orders` }),
     },
   });
 
-  return { success: true, orderId: order.id };
+  return {
+    success: true,
+    orderId: order.id,
+    provider,
+    paymentOrderId: payment?.externalId ?? null,
+    razorpayKeyId: provider === "razorpay" ? process.env.RAZORPAY_KEY_ID ?? null : null,
+    amount: listing.price,
+  };
+}
+
+export async function confirmRazorpayPayment(args: {
+  orderId: string;
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+  razorpaySignature: string;
+}) {
+  const session = await getSession();
+  if (!session) return { error: "Not authenticated" };
+
+  const order = await prisma.order.findUnique({ where: { id: args.orderId } });
+  if (!order || order.buyerId !== session.userId) return { error: "Order not found" };
+
+  const valid = verifyPaymentSignature({
+    orderId: args.razorpayOrderId,
+    paymentId: args.razorpayPaymentId,
+    signature: args.razorpaySignature,
+  });
+
+  if (!valid) return { error: "Invalid payment signature" };
+
+  await prisma.order.update({
+    where: { id: args.orderId },
+    data: { paymentStatus: "held", paymentId: args.razorpayPaymentId },
+  });
+
+  return { success: true };
 }
