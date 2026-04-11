@@ -13,6 +13,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [devHint, setDevHint] = useState(false);
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,8 +21,12 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
     const result = await sendOtp(phone);
-    if (result.error) { setError(result.error); }
-    else { setStep("otp"); }
+    if (result.error) {
+      setError(result.error);
+    } else {
+      setStep("otp");
+      setDevHint(Boolean(result.devMode));
+    }
     setLoading(false);
   };
 
@@ -85,6 +90,11 @@ export default function LoginPage() {
             ) : (
               <div>
                 <label className="block text-[11px] font-medium text-text-secondary mb-2">Enter OTP</label>
+                {devHint && (
+                  <p className="text-[11px] text-condition-good-text bg-condition-good-bg px-2 py-1 rounded mb-2 text-center">
+                    Dev mode — OTP printed to the server console.
+                  </p>
+                )}
                 <div className="flex gap-2 mb-4 justify-center">
                   {otp.map((digit, i) => (
                     <input

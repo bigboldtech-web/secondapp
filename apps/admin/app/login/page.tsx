@@ -11,6 +11,7 @@ export default function AdminLoginPage() {
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [devHint, setDevHint] = useState(false);
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +23,7 @@ export default function AdminLoginPage() {
       setError(res.error);
       return;
     }
+    setDevHint(Boolean(res.devMode));
     setStep("otp");
   };
 
@@ -86,7 +88,11 @@ export default function AdminLoginPage() {
               className="w-full px-3 py-2.5 text-[15px] tracking-[0.3em] text-center border border-neutral-200 rounded-lg outline-none"
               required
             />
-            <p className="text-[11px] text-neutral-500">Dev OTP: 123456</p>
+            {devHint && (
+              <p className="text-[11px] text-amber-700 bg-amber-50 px-2 py-1 rounded">
+                Dev mode — OTP printed to the server console.
+              </p>
+            )}
             {error && <p className="text-[12px] text-red-600">{error}</p>}
             <button
               type="submit"

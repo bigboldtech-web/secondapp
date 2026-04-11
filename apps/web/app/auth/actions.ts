@@ -2,15 +2,15 @@
 
 import { prisma } from "@second-app/database";
 import { setSessionCookie, clearSessionCookie } from "@/lib/auth";
+import { sendSms, generateOtp, isDevOtpMode } from "@/lib/notifications";
 
 export async function sendOtp(phone: string) {
   if (phone.length !== 10) return { error: "Invalid phone number" };
 
-  // Delete any existing OTPs for this phone
+  // Delete any existing OTPs for this phone so only the latest code works.
   await prisma.otpVerification.deleteMany({ where: { phone } });
 
-  // For MVP: hardcoded OTP. In production: integrate SMS gateway (MSG91, Twilio, etc.)
-  const code = "123456";
+  const code = generateOtp();
 
   await prisma.otpVerification.create({
     data: {
@@ -20,7 +20,22 @@ export async function sendOtp(phone: string) {
     },
   });
 
-  return { success: true, message: "OTP sent (dev: 123456)" };
+  const delivery = await sendSms({
+    to: phone,
+    message: `Your Second App verification code is ${code}. Valid for 10 minutes.`,
+  });
+
+  if (!delivery.ok) {
+    // Log-only: the OTP is still written to the DB so a manual SMS re-send
+    // or support flow can read it. We surface a user-facing error.
+    return { error: "Couldn't send SMS right now — please try again in a moment" };
+  }
+
+  return {
+    success: true,
+    message: isDevOtpMode() ? "OTP printed to server console (dev mode)" : "OTP sent",
+    devMode: isDevOtpMode(),
+  };
 }
 
 export async function verifyOtp(phone: string, otp: string) {
