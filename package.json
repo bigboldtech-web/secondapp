@@ -10,8 +10,13 @@
     "dev": "turbo dev",
     "build": "turbo build",
     "lint": "turbo lint",
-    "db:generate": "turbo db:generate",
-    "db:push": "turbo db:push"
+    "db:generate": "npm run db:generate -w @second-app/database",
+    "db:push": "npm run db:push -w @second-app/database",
+    "db:migrate": "npm run db:migrate -w @second-app/database",
+    "db:migrate:deploy": "npm run db:migrate:deploy -w @second-app/database",
+    "db:seed": "npm run db:seed -w @second-app/database",
+    "db:build-search-vocab": "npm run db:build-search-vocab -w @second-app/database",
+    "db:studio": "npm run db:studio -w @second-app/database"
   },
   "devDependencies": {
     "turbo": "^2.0.0"
