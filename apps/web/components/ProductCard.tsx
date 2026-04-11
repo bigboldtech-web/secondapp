@@ -1,17 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ListingCardData, CONDITION_COLORS, CATEGORY_ICONS } from "@/lib/types";
 import { formatPrice, formatTimeAgo } from "@/lib/utils";
+import { toggleSaveListing } from "@/app/actions";
 
 interface ProductCardProps {
   item: ListingCardData;
   compact?: boolean;
+  initialSaved?: boolean;
 }
 
-export default function ProductCard({ item, compact = false }: ProductCardProps) {
-  const [saved, setSaved] = useState(false);
+export default function ProductCard({ item, compact = false, initialSaved = false }: ProductCardProps) {
+  const router = useRouter();
+  const [saved, setSaved] = useState(initialSaved);
+  const [, startTransition] = useTransition();
+
+  const handleToggleSave = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Optimistic flip
+    const next = !saved;
+    setSaved(next);
+    startTransition(async () => {
+      const res = await toggleSaveListing(item.id);
+      if ("error" in res) {
+        // rollback + bounce to login
+        setSaved(!next);
+        router.push("/login");
+        return;
+      }
+      // Sync with server's authoritative state
+      setSaved(res.saved ?? next);
+    });
+  };
   const icon = CATEGORY_ICONS[item.categorySlug] || CATEGORY_ICONS.phones;
   const condStyle = CONDITION_COLORS[item.condition] || { bg: "bg-gray-100", text: "text-gray-700" };
   const specEntries = Object.values(item.specs).slice(0, 2);
@@ -44,7 +68,8 @@ export default function ProductCard({ item, compact = false }: ProductCardProps)
           </span>
 
           <button
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSaved(!saved); }}
+            onClick={handleToggleSave}
+            aria-label={saved ? "Remove from saved" : "Save listing"}
             className={`absolute ${compact ? "top-1 right-1 w-6 h-6" : "top-2 right-2 w-7 h-7"} rounded-full border-none bg-white/85 cursor-pointer flex items-center justify-center`}
           >
             <svg
