@@ -1,7 +1,18 @@
 "use server";
 
+import { headers } from "next/headers";
 import { prisma } from "@second-app/database";
 import { setSessionCookie, clearSessionCookie } from "@/lib/auth";
+import { rateLimitAll } from "@/lib/rate-limit";
+
+async function callerIp(): Promise<string> {
+  const h = await headers();
+  return (
+    h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    h.get("x-real-ip") ||
+    "unknown"
+  );
+}
 
 // Admin login shares the same SMS gateway and OTP generator as the web app.
 // We import from apps/web via a relative path so provider env is resolved
@@ -39,6 +50,15 @@ async function deliverSms(phone: string, message: string): Promise<boolean> {
 export async function adminSendOtp(phone: string) {
   if (phone.length !== 10) return { error: "Invalid phone number" };
 
+  const ip = await callerIp();
+  const limit = rateLimitAll([
+    { name: "admin-otp:phone", key: phone, max: 3, windowMs: 10 * 60 * 1000 },
+    { name: "admin-otp:ip", key: ip, max: 10, windowMs: 60 * 60 * 1000 },
+  ]);
+  if (!limit.ok) {
+    return { error: `Too many attempts. Try again in ${Math.ceil(limit.resetInSeconds / 60)} min.` };
+  }
+
   const user = await prisma.user.findFirst({ where: { phone } });
   if (!user || user.role !== "admin") {
     return { error: "This phone is not registered as an admin" };
@@ -64,6 +84,13 @@ export async function adminSendOtp(phone: string) {
 }
 
 export async function adminVerifyOtp(phone: string, otp: string) {
+  const ip = await callerIp();
+  const limit = rateLimitAll([
+    { name: "admin-otp-verify:phone", key: phone, max: 10, windowMs: 10 * 60 * 1000 },
+    { name: "admin-otp-verify:ip", key: ip, max: 30, windowMs: 60 * 60 * 1000 },
+  ]);
+  if (!limit.ok) return { error: "Too many attempts. Please request a fresh OTP." };
+
   const verification = await prisma.otpVerification.findFirst({
     where: {
       phone,

@@ -1,11 +1,32 @@
 "use server";
 
+import { headers } from "next/headers";
 import { prisma } from "@second-app/database";
 import { setSessionCookie, clearSessionCookie } from "@/lib/auth";
 import { sendSms, generateOtp, isDevOtpMode } from "@/lib/notifications";
+import { rateLimitAll } from "@/lib/rate-limit";
+
+async function callerIp(): Promise<string> {
+  const h = await headers();
+  return (
+    h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    h.get("x-real-ip") ||
+    "unknown"
+  );
+}
 
 export async function sendOtp(phone: string) {
   if (phone.length !== 10) return { error: "Invalid phone number" };
+
+  // Rate limit BEFORE hitting the DB or SMS gateway so abuse can't cost us.
+  const ip = await callerIp();
+  const limit = rateLimitAll([
+    { name: "otp:phone", key: phone, max: 3, windowMs: 10 * 60 * 1000 },   // 3 per phone per 10 min
+    { name: "otp:ip", key: ip, max: 15, windowMs: 60 * 60 * 1000 },        // 15 per IP per hour
+  ]);
+  if (!limit.ok) {
+    return { error: `Too many attempts. Try again in ${Math.ceil(limit.resetInSeconds / 60)} min.` };
+  }
 
   // Delete any existing OTPs for this phone so only the latest code works.
   await prisma.otpVerification.deleteMany({ where: { phone } });
@@ -39,6 +60,16 @@ export async function sendOtp(phone: string) {
 }
 
 export async function verifyOtp(phone: string, otp: string) {
+  // Brute-force brake: cap attempts per phone and per IP regardless of outcome.
+  const ip = await callerIp();
+  const limit = rateLimitAll([
+    { name: "otp-verify:phone", key: phone, max: 10, windowMs: 10 * 60 * 1000 },
+    { name: "otp-verify:ip", key: ip, max: 50, windowMs: 60 * 60 * 1000 },
+  ]);
+  if (!limit.ok) {
+    return { error: "Too many attempts. Please request a fresh OTP." };
+  }
+
   const verification = await prisma.otpVerification.findFirst({
     where: {
       phone,
