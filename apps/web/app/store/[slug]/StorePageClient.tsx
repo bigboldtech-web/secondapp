@@ -33,13 +33,25 @@ export default function StorePageClient({ vendor }: StorePageClientProps) {
         </div>
       </header>
 
-      {/* Store banner */}
+      {/* Store banner — prefer vendor banner, else auto-loop the top video,
+          else a soft gradient fallback. */}
       <div className="bg-input h-32 sm:h-44 relative overflow-hidden">
-        {vendor.bannerUrl && (
+        {vendor.bannerUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={vendor.bannerUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
-        )}
-        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/20 to-transparent" />
+        ) : vendor.featuredVideoUrl ? (
+          <video
+            src={vendor.featuredVideoUrl}
+            poster={vendor.featuredVideoPoster ?? undefined}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        ) : null}
+        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/30 to-transparent" />
       </div>
 
       <main className="mx-auto max-w-[1140px] px-4 sm:px-6">

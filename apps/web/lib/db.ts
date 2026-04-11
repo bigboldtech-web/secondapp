@@ -359,6 +359,19 @@ export async function getVendorBySlug(slug: string): Promise<VendorProfile | nul
 
   if (!vendor) return null;
 
+  // Pick the most-viewed listing that has a video to hero the store when the
+  // vendor hasn't uploaded a custom banner. Stable tiebreak on createdAt.
+  const videoCandidate = vendor.listings
+    .filter((l) => !!l.videoUrl)
+    .reduce<(typeof vendor.listings)[number] | null>((best, l) => {
+      if (!best) return l;
+      if (l.viewCount !== best.viewCount) return l.viewCount > best.viewCount ? l : best;
+      return l.createdAt > best.createdAt ? l : best;
+    }, null);
+
+  const featuredVideoUrl = videoCandidate?.videoUrl ?? null;
+  const featuredVideoPoster = videoCandidate ? parsePhotos(videoCandidate.photos)[0] ?? null : null;
+
   return {
     id: vendor.id,
     storeName: vendor.storeName,
@@ -374,6 +387,8 @@ export async function getVendorBySlug(slug: string): Promise<VendorProfile | nul
     totalSales: vendor.totalSales,
     totalListings: vendor.listings.length,
     createdAt: vendor.createdAt,
+    featuredVideoUrl,
+    featuredVideoPoster,
     listings: vendor.listings.map((l) => {
       const photos = parsePhotos(l.photos);
       return {

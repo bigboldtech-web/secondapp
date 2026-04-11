@@ -138,6 +138,8 @@ export interface VendorProfile {
   totalSales: number;
   totalListings: number;
   createdAt: Date;
+  featuredVideoUrl: string | null;
+  featuredVideoPoster: string | null;
   listings: StoreListing[];
   reviews: VendorReview[];
 }
