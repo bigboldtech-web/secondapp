@@ -176,7 +176,9 @@ export async function recordHit(termId: string): Promise<void> {
 
 // ---------------------------------------------------------------------------
 // recordClick — called when a user clicks a *listing* from a search/suggest.
-// Bumps the term's viewCount (stronger signal than a typed query).
+// Bumps the term's viewCount (stronger signal than a typed query) and the
+// TermCategoryClick stat for the listing's category, so the category
+// learner can promote a dominant category over time.
 // ---------------------------------------------------------------------------
 export async function recordClick(args: { termId?: string | null; listingId: string; queryLogId?: string | null }): Promise<void> {
   try {
@@ -185,6 +187,20 @@ export async function recordClick(args: { termId?: string | null; listingId: str
         where: { id: args.termId },
         data: { viewCount: { increment: 1 } },
       });
+
+      // learn which category this term's clicks cluster around
+      const listing = await prisma.listing.findUnique({
+        where: { id: args.listingId },
+        select: { product: { select: { categoryId: true } } },
+      });
+      const categoryId = listing?.product.categoryId;
+      if (categoryId) {
+        await prisma.termCategoryClick.upsert({
+          where: { termId_categoryId: { termId: args.termId, categoryId } },
+          create: { termId: args.termId, categoryId, count: 1 },
+          update: { count: { increment: 1 } },
+        });
+      }
     }
     if (args.queryLogId) {
       await prisma.searchQueryLog.update({
@@ -195,6 +211,28 @@ export async function recordClick(args: { termId?: string | null; listingId: str
   } catch {
     /* swallow */
   }
+}
+
+// ---------------------------------------------------------------------------
+// getDominantCategory — returns the categoryId a term's clicks cluster in,
+// but only if one category has >= 70% of the total (OLX's threshold).
+// A minimum sample floor prevents a single click from deciding the category.
+// ---------------------------------------------------------------------------
+const DOMINANT_THRESHOLD = 0.7;
+const MIN_SAMPLES = 5;
+
+export async function getDominantCategory(termId: string): Promise<string | null> {
+  const rows = await prisma.termCategoryClick.findMany({
+    where: { termId },
+    select: { categoryId: true, count: true },
+  });
+  if (rows.length === 0) return null;
+
+  const total = rows.reduce((sum, r) => sum + r.count, 0);
+  if (total < MIN_SAMPLES) return null;
+
+  const winner = rows.reduce((best, r) => (r.count > best.count ? r : best), rows[0]);
+  return winner.count / total >= DOMINANT_THRESHOLD ? winner.categoryId : null;
 }
 
 // ---------------------------------------------------------------------------

@@ -365,6 +365,21 @@ model SearchTerm {
   @@index([metaphone])
 }
 
+// Per-term engagement per category. Bumped on every listing click that
+// originates from a search/suggest so we can learn which category a term
+// "really belongs to" (OLX's >70% engagement rule). Used to disambiguate
+// polysemous terms like "watch" → fashion vs mobile-accessories.
+model TermCategoryClick {
+  id         String   @id @default(cuid())
+  termId     String
+  categoryId String
+  count      Int      @default(0)
+  updatedAt  DateTime @updatedAt
+
+  @@unique([termId, categoryId])
+  @@index([termId])
+}
+
 model SearchQueryLog {
   id                String   @id @default(cuid())
   query             String
