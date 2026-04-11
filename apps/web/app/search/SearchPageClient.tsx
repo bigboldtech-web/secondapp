@@ -9,9 +9,10 @@ import ProductCard from "@/components/ProductCard";
 interface SearchPageClientProps {
   query: string;
   listings: ListingCardData[];
+  correctedFrom?: string | null;
 }
 
-export default function SearchPageClient({ query, listings }: SearchPageClientProps) {
+export default function SearchPageClient({ query, listings, correctedFrom }: SearchPageClientProps) {
   const router = useRouter();
   const [searchInput, setSearchInput] = useState(query);
 
@@ -54,6 +55,18 @@ export default function SearchPageClient({ query, listings }: SearchPageClientPr
             <h1 className="text-lg font-bold text-text-primary mb-1">
               Results for &quot;{query}&quot;
             </h1>
+            {correctedFrom && (
+              <p className="text-[12px] text-text-muted mb-1">
+                Showing matches for the corrected spelling. Search for{" "}
+                <Link
+                  href={`/search?q=${encodeURIComponent(correctedFrom)}&strict=1`}
+                  className="text-coral font-semibold no-underline"
+                >
+                  &quot;{correctedFrom}&quot;
+                </Link>{" "}
+                instead.
+              </p>
+            )}
             <p className="text-[13px] text-text-muted mb-4">{listings.length} listings found</p>
 
             {listings.length > 0 ? (
