@@ -277,7 +277,20 @@ export async function getListingById(id: string): Promise<ListingDetail | null> 
       brand: listing.product.brand,
       model: listing.product.model,
     },
-    vendor: listing.vendor,
+    vendor: {
+      ...listing.vendor,
+      avgResponseHours: await (async () => {
+        const orders = await prisma.order.findMany({
+          where: { vendorId: listing.vendorId, orderStatus: { in: ["confirmed", "shipped", "delivered"] } },
+          select: { createdAt: true, updatedAt: true },
+          orderBy: { createdAt: "desc" },
+          take: 20,
+        });
+        if (orders.length < 3) return null;
+        const totalH = orders.reduce((s, o) => s + (o.updatedAt.getTime() - o.createdAt.getTime()) / 3600000, 0);
+        return Math.round(totalH / orders.length);
+      })(),
+    },
   };
 }
 
@@ -361,6 +374,21 @@ export async function getVendorBySlug(slug: string): Promise<VendorProfile | nul
 
   if (!vendor) return null;
 
+  // Compute average response time (placed → confirmed) from the last 20 orders.
+  const recentOrders = await prisma.order.findMany({
+    where: { vendorId: vendor.id, orderStatus: { in: ["confirmed", "shipped", "delivered"] } },
+    select: { createdAt: true, updatedAt: true },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+  });
+  let avgResponseHours: number | null = null;
+  if (recentOrders.length >= 3) {
+    const totalHours = recentOrders.reduce((sum, o) => {
+      return sum + (o.updatedAt.getTime() - o.createdAt.getTime()) / (1000 * 60 * 60);
+    }, 0);
+    avgResponseHours = Math.round(totalHours / recentOrders.length);
+  }
+
   // Pick the most-viewed listing that has a video to hero the store when the
   // vendor hasn't uploaded a custom banner. Stable tiebreak on createdAt.
   const videoCandidate = vendor.listings
@@ -389,6 +417,7 @@ export async function getVendorBySlug(slug: string): Promise<VendorProfile | nul
     totalSales: vendor.totalSales,
     totalListings: vendor.listings.length,
     createdAt: vendor.createdAt,
+    avgResponseHours,
     featuredVideoUrl,
     featuredVideoPoster,
     listings: vendor.listings.map((l) => {

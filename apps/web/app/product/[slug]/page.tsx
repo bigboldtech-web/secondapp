@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { prisma } from "@second-app/database";
 import { getProductBySlug } from "@/lib/db";
 import ProductPageClient from "./ProductPageClient";
+import PriceHistory from "./PriceHistory";
 import { productGroupJsonLd, breadcrumbJsonLd } from "@/lib/seo";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -30,6 +32,33 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   if (!product) notFound();
 
+  // Build a price history — group ALL listings (including sold) by month.
+  const allListings = await prisma.listing.findMany({
+    where: { product: { slug } },
+    select: { price: true, createdAt: true },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const months = new Map<string, { total: number; count: number }>();
+  for (const l of allListings) {
+    const key = `${l.createdAt.getFullYear()}-${String(l.createdAt.getMonth() + 1).padStart(2, "0")}`;
+    const entry = months.get(key) ?? { total: 0, count: 0 };
+    entry.total += l.price;
+    entry.count += 1;
+    months.set(key, entry);
+  }
+  const priceHistory = [...months.entries()]
+    .slice(-6)
+    .map(([key, { total, count }]) => ({
+      label: new Date(key + "-01").toLocaleDateString("en-IN", { month: "short" }),
+      avgPrice: Math.round(total / count),
+      count,
+    }));
+
+  const currentAvg = product.listings.length > 0
+    ? Math.round(product.listings.reduce((s, l) => s + l.price, 0) / product.listings.length)
+    : 0;
+
   const pageUrl = `https://gosecond.in/product/${slug}`;
 
   return (
@@ -48,7 +77,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           ])),
         }}
       />
-      <ProductPageClient product={product} />
+      <ProductPageClient product={product}>
+        <PriceHistory history={priceHistory} currentAvg={currentAvg} />
+      </ProductPageClient>
     </>
   );
 }

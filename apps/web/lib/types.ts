@@ -117,6 +117,7 @@ export interface ListingDetail {
     totalSales: number;
     locationCity: string | null;
     bio: string | null;
+    avgResponseHours: number | null;
   };
 }
 
@@ -139,6 +140,7 @@ export interface VendorProfile {
   totalSales: number;
   totalListings: number;
   createdAt: Date;
+  avgResponseHours: number | null;
   featuredVideoUrl: string | null;
   featuredVideoPoster: string | null;
   listings: StoreListing[];

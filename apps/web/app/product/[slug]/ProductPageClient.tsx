@@ -16,9 +16,10 @@ const CERT_BADGES: Record<string, { label: string; color: string }> = {
 
 interface ProductPageClientProps {
   product: ProductDetail;
+  children?: React.ReactNode;
 }
 
-export default function ProductPageClient({ product }: ProductPageClientProps) {
+export default function ProductPageClient({ product, children }: ProductPageClientProps) {
   const [sortBy, setSortBy] = useState<string>("price-low");
   const [conditionFilter, setConditionFilter] = useState<string>("all");
   const [cityFilter, setCityFilter] = useState<string>("all");
@@ -100,6 +101,9 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
             <span>{product.brandName}</span>
           </div>
         </div>
+
+        {/* Price history (server-rendered, passed as children) */}
+        {children}
 
         {/* Filter bar */}
         <div className="flex flex-wrap gap-2 mb-4 items-center">

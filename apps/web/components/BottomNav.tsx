@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { getUnreadCount } from "@/app/notifications/actions";
 
 const NAV_ITEMS = [
   { id: "home", label: "Home", href: "/", icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" },
@@ -13,6 +15,15 @@ const NAV_ITEMS = [
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    getUnreadCount().then((c) => setUnread(c)).catch(() => {});
+    const interval = setInterval(() => {
+      getUnreadCount().then((c) => setUnread(c)).catch(() => {});
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
@@ -25,7 +36,7 @@ export default function BottomNav() {
         <Link
           key={item.id}
           href={item.href}
-          className="flex-1 flex flex-col items-center gap-0.5 pt-2 pb-1.5 no-underline"
+          className="flex-1 flex flex-col items-center gap-0.5 pt-2 pb-1.5 no-underline relative"
         >
           {item.id === "sell" ? (
             <div className="w-10 h-10 rounded-full bg-coral flex items-center justify-center -mt-4 shadow-[0_2px_8px_rgba(232,85,61,0.25)]">
@@ -34,9 +45,16 @@ export default function BottomNav() {
               </svg>
             </div>
           ) : (
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={isActive(item.href) ? "#E8553D" : "#999"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d={item.icon} />
-            </svg>
+            <div className="relative">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={isActive(item.href) ? "#E8553D" : "#999"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d={item.icon} />
+              </svg>
+              {item.id === "inbox" && unread > 0 && (
+                <span className="absolute -top-1 -right-1.5 w-4 h-4 rounded-full bg-coral text-white text-[8px] font-bold flex items-center justify-center">
+                  {unread > 9 ? "9+" : unread}
+                </span>
+              )}
+            </div>
           )}
           <span className={`text-[10px] ${item.id === "sell" || isActive(item.href) ? "text-coral font-semibold" : "text-text-secondary font-normal"}`}>
             {item.label}

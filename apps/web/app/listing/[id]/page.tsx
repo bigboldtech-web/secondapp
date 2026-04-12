@@ -8,6 +8,7 @@ import { CONDITION_COLORS, CATEGORY_ICONS } from "@/lib/types";
 import SimilarListings from "./SimilarListings";
 import AskQuestionButton from "./AskQuestionButton";
 import ReportButton from "./ReportButton";
+import SuggestedQuestions from "./SuggestedQuestions";
 import { listingJsonLd, breadcrumbJsonLd } from "@/lib/seo";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -249,9 +250,9 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 text-center mb-3">
+                <div className={`grid gap-2 text-center mb-3 ${listing.vendor.avgResponseHours !== null ? "grid-cols-4" : "grid-cols-3"}`}>
                   <div>
-                    <p className="text-sm font-bold text-text-primary">{"★".repeat(Math.round(listing.vendor.ratingAvg))} {listing.vendor.ratingAvg.toFixed(1)}</p>
+                    <p className="text-sm font-bold text-text-primary">{listing.vendor.ratingAvg.toFixed(1)} ★</p>
                     <p className="text-[10px] text-text-muted">{listing.vendor.ratingCount} reviews</p>
                   </div>
                   <div>
@@ -262,6 +263,14 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
                     <p className="text-sm font-bold text-text-primary">{listing.vendor.locationCity || "India"}</p>
                     <p className="text-[10px] text-text-muted">Location</p>
                   </div>
+                  {listing.vendor.avgResponseHours !== null && (
+                    <div>
+                      <p className="text-sm font-bold text-condition-likenew-text">
+                        {listing.vendor.avgResponseHours <= 1 ? "< 1h" : `~${listing.vendor.avgResponseHours}h`}
+                      </p>
+                      <p className="text-[10px] text-text-muted">Response</p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="text-[11px] text-coral font-medium text-center">
@@ -272,6 +281,14 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
 
             {/* Ask a question */}
             <AskQuestionButton listingId={listing.id} />
+            <SuggestedQuestions
+              listingId={listing.id}
+              productName={listing.product.displayName}
+              categorySlug={listing.product.category.slug}
+              condition={listing.condition}
+              specs={listing.specs}
+              vendorName={listing.vendor.storeName}
+            />
 
             {/* View all listings for this product */}
             <Link

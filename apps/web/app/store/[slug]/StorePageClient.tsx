@@ -81,12 +81,15 @@ export default function StorePageClient({ vendor }: StorePageClientProps) {
         </div>
 
         {/* Stats bar */}
-        <div className="grid grid-cols-4 gap-3 mb-5">
+        <div className="grid grid-cols-4 sm:grid-cols-5 gap-3 mb-5">
           {[
             { label: "Listings", value: vendor.totalListings.toString() },
             { label: "Sales", value: vendor.totalSales.toString() },
             { label: "Rating", value: `${vendor.ratingAvg.toFixed(1)} ★` },
             { label: "Reviews", value: vendor.ratingCount.toString() },
+            ...(vendor.avgResponseHours !== null
+              ? [{ label: "Responds in", value: vendor.avgResponseHours <= 1 ? "< 1 hr" : `~${vendor.avgResponseHours} hr${vendor.avgResponseHours !== 1 ? "s" : ""}` }]
+              : []),
           ].map((stat) => (
             <div key={stat.label} className="bg-card border border-border rounded-lg px-3 py-2.5 text-center">
               <p className="text-sm sm:text-base font-bold text-text-primary">{stat.value}</p>
