@@ -17,7 +17,8 @@ interface HeaderProps {
 export default function Header({ city, setCity, categories, activeCategory, isLoggedIn, userName }: HeaderProps) {
   const [cityOpen, setCityOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const desktopCityRef = useRef<HTMLDivElement>(null);
+  const mobileCityRef = useRef<HTMLDivElement>(null);
 
   const activeCategoryId = categories.find((c) => c.slug === activeCategory)?.id ?? null;
 
@@ -29,7 +30,10 @@ export default function Header({ city, setCity, categories, activeCategory, isLo
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setCityOpen(false);
+      const target = e.target as Node;
+      const insideDesktop = desktopCityRef.current?.contains(target);
+      const insideMobile = mobileCityRef.current?.contains(target);
+      if (!insideDesktop && !insideMobile) setCityOpen(false);
     };
     if (cityOpen) document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
@@ -48,7 +52,7 @@ export default function Header({ city, setCity, categories, activeCategory, isLo
           <div className="w-px h-5 bg-border shrink-0" />
 
           {/* City picker */}
-          <div className="relative shrink-0" ref={dropdownRef}>
+          <div className="relative shrink-0" ref={desktopCityRef}>
             <button onClick={() => setCityOpen(!cityOpen)} className="flex items-center gap-1 px-2 py-1.5 rounded-md border border-border bg-white text-xs font-medium text-icon-active cursor-pointer">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" /><circle cx="12" cy="10" r="3" /></svg>
               {city}
@@ -91,7 +95,7 @@ export default function Header({ city, setCity, categories, activeCategory, isLo
             Second <span className="text-coral">App</span>
           </Link>
           <SearchBar variant="mobile" categoryId={activeCategoryId} />
-          <div className="relative shrink-0" ref={dropdownRef}>
+          <div className="relative shrink-0" ref={mobileCityRef}>
             <button onClick={() => setCityOpen(!cityOpen)} className="flex items-center gap-0.5 px-1.5 py-1 border-none bg-transparent cursor-pointer text-[11px] text-text-secondary">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" /><circle cx="12" cy="10" r="3" /></svg>
               {city === "All India" ? "India" : city}
