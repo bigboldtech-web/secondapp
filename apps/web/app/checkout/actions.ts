@@ -17,7 +17,9 @@ export async function createOrder(data: {
     include: { vendor: true },
   });
 
-  if (!listing || listing.status !== "active") return { error: "Listing no longer available" };
+  if (!listing || listing.status !== "active" || listing.quantity < 1) {
+    return { error: "Listing no longer available" };
+  }
 
   const commissionRate = 0.07; // 7%
   const isCod = data.paymentMethod === "cod";
@@ -43,10 +45,15 @@ export async function createOrder(data: {
     },
   });
 
-  // Reserve the listing so it can't be double-sold while payment is in progress.
+  // Decrement stock. When it hits 0, mark the listing as sold so no more
+  // orders can come in. Listings with quantity > 1 stay active.
+  const newQty = listing.quantity - 1;
   await prisma.listing.update({
     where: { id: listing.id },
-    data: { status: "sold" },
+    data: {
+      quantity: newQty,
+      ...(newQty <= 0 ? { status: "sold" } : {}),
+    },
   });
 
   let payment: Awaited<ReturnType<typeof createPaymentOrder>> | null = null;

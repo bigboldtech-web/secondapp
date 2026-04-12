@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import Link from "next/link";
 import { ListingCardData } from "@/lib/types";
 import ProductCard from "@/components/ProductCard";
+import SiteHeader from "@/components/SiteHeader";
 
 interface CategoryPageClientProps {
   category: { id: string; name: string; slug: string };
@@ -43,19 +43,13 @@ export default function CategoryPageClient({ category, listings }: CategoryPageC
 
   return (
     <div className="min-h-screen bg-bg">
-      <header className="sticky top-0 z-50 bg-white border-b border-border">
-        <div className="mx-auto max-w-[1140px] px-4 sm:px-6 h-[52px] flex items-center gap-3">
-          <Link href="/" className="text-lg font-extrabold tracking-tight text-text-primary no-underline shrink-0">
-            Second <span className="text-coral">App</span>
-          </Link>
-          <div className="w-px h-5 bg-border" />
-          <nav className="text-[12px] text-text-muted flex items-center gap-1">
-            <Link href="/" className="hover:text-text-secondary no-underline text-text-muted">Home</Link>
-            <span>/</span>
-            <span className="text-text-primary font-medium">{category.name}</span>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader
+        breadcrumbs={[
+          { label: "Home", href: "/" },
+          { label: category.name },
+        ]}
+        categoryId={category.id}
+      />
 
       <main className="mx-auto max-w-[1140px] px-4 sm:px-6 py-5">
         <h1 className="text-xl font-bold text-text-primary mb-1">{category.name}</h1>

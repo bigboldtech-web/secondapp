@@ -222,6 +222,7 @@ export async function deleteListing(listingId: string) {
 interface UpdateListingInput {
   price: number;              // rupees
   originalPrice: number | null;
+  quantity: number;
   condition: string;
   description: string | null;
   specs: Record<string, string>;
@@ -239,11 +240,14 @@ export async function updateListing(listingId: string, input: UpdateListingInput
     return { error: "Description must be under 1000 characters" };
   }
 
+  const qty = Math.max(1, Math.min(input.quantity ?? 1, 999));
+
   await prisma.listing.update({
     where: { id: owned.listingId },
     data: {
       price: Math.round(input.price * 100),
       originalPrice: input.originalPrice ? Math.round(input.originalPrice * 100) : null,
+      quantity: qty,
       condition: input.condition,
       description: input.description || null,
       specs: JSON.stringify(input.specs ?? {}),
@@ -266,6 +270,7 @@ export interface EditableListingPayload {
   categoryName: string;
   price: number;
   originalPrice: number | null;
+  quantity: number;
   condition: string;
   conditions: string[];
   description: string | null;
@@ -315,6 +320,7 @@ export async function getListingForEdit(
     categoryName: listing.product.category.name,
     price: listing.price / 100,
     originalPrice: listing.originalPrice ? listing.originalPrice / 100 : null,
+    quantity: listing.quantity,
     condition: listing.condition,
     conditions,
     description: listing.description,

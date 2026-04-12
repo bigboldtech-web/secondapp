@@ -1,19 +1,15 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { CITIES } from "@/lib/types";
+import SearchBar from "./SearchBar";
 
 interface SiteHeaderProps {
   breadcrumbs?: { label: string; href?: string }[];
-  showSearch?: boolean;
-  initialQuery?: string;
+  categoryId?: string | null;
 }
 
-export default function SiteHeader({ breadcrumbs, showSearch = true, initialQuery = "" }: SiteHeaderProps) {
-  const router = useRouter();
-  const [query, setQuery] = useState(initialQuery);
+export default function SiteHeader({ breadcrumbs, categoryId }: SiteHeaderProps) {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -21,13 +17,6 @@ export default function SiteHeader({ breadcrumbs, showSearch = true, initialQuer
     window.addEventListener("scroll", h);
     return () => window.removeEventListener("scroll", h);
   }, []);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (query.trim()) {
-      router.push(`/search?q=${encodeURIComponent(query.trim())}`);
-    }
-  };
 
   return (
     <header
@@ -42,7 +31,7 @@ export default function SiteHeader({ breadcrumbs, showSearch = true, initialQuer
 
         {breadcrumbs && breadcrumbs.length > 0 && (
           <>
-            <div className="w-px h-5 bg-border shrink-0" />
+            <div className="w-px h-5 bg-border shrink-0 hidden sm:block" />
             <nav className="hidden sm:flex text-[12px] text-text-muted items-center gap-1 overflow-hidden min-w-0">
               {breadcrumbs.map((crumb, i) => (
                 <span key={i} className="flex items-center gap-1 shrink-0">
@@ -60,41 +49,23 @@ export default function SiteHeader({ breadcrumbs, showSearch = true, initialQuer
           </>
         )}
 
-        {showSearch && !breadcrumbs && (
-          <>
-            <div className="w-px h-5 bg-border shrink-0 hidden sm:block" />
-            <form onSubmit={handleSearch} className="flex-1 max-w-[480px]">
-              <div className="flex items-center bg-input-light rounded-lg px-2 border-[1.5px] border-transparent transition-all focus-within:border-border focus-within:bg-white">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#bbb" strokeWidth="2.5">
-                  <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
-                </svg>
-                <input
-                  type="text"
-                  placeholder="Search for anything..."
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  className="flex-1 border-none bg-transparent py-2 px-1.5 text-[13px] text-text-primary"
-                />
-                {query && (
-                  <button type="button" onClick={() => setQuery("")} className="border-none bg-transparent cursor-pointer text-text-faint flex p-0.5">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M18 6L6 18M6 6l12 12" />
-                    </svg>
-                  </button>
-                )}
-              </div>
-            </form>
-          </>
-        )}
+        <div className="w-px h-5 bg-border shrink-0 hidden sm:block" />
+        <div className="hidden sm:block flex-1 max-w-[420px]">
+          <SearchBar variant="desktop" categoryId={categoryId} />
+        </div>
 
         <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-          <Link href="/login" className="px-3 py-1.5 rounded-md border border-border bg-white text-xs font-medium cursor-pointer text-icon-active no-underline">
+          <Link href="/login" className="px-3 py-1.5 rounded-md border border-border bg-white text-xs font-medium text-icon-active no-underline hidden sm:inline">
             Log in
           </Link>
-          <Link href="/vendor/register" className="px-3.5 py-1.5 rounded-md border-none bg-coral text-white text-xs font-semibold cursor-pointer no-underline">
+          <Link href="/vendor/listings/new" className="px-3.5 py-1.5 rounded-md border-none bg-coral text-white text-xs font-semibold no-underline">
             + Sell
           </Link>
         </div>
+      </div>
+
+      <div className="sm:hidden px-4 pb-2">
+        <SearchBar variant="mobile" categoryId={categoryId} />
       </div>
     </header>
   );

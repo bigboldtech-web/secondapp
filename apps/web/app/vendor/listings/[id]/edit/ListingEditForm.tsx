@@ -13,6 +13,7 @@ interface EditableListing {
   categoryName: string;
   price: number;
   originalPrice: number | null;
+  quantity: number;
   condition: string;
   conditions: string[];
   description: string | null;
@@ -33,6 +34,7 @@ export default function ListingEditForm({ listing }: ListingEditFormProps) {
   const [originalPrice, setOriginalPrice] = useState(
     listing.originalPrice ? String(Math.round(listing.originalPrice)) : ""
   );
+  const [quantity, setQuantity] = useState(String(listing.quantity));
   const [condition, setCondition] = useState(listing.condition);
   const [description, setDescription] = useState(listing.description ?? "");
   const [photos, setPhotos] = useState<string[]>(listing.photos);
@@ -97,6 +99,7 @@ export default function ListingEditForm({ listing }: ListingEditFormProps) {
     const res = await updateListing(listing.id, {
       price: priceNum,
       originalPrice: originalPrice ? parseInt(originalPrice, 10) : null,
+      quantity: parseInt(quantity, 10) || 1,
       condition,
       description: description || null,
       specs,
@@ -278,6 +281,16 @@ export default function ListingEditForm({ listing }: ListingEditFormProps) {
                 Buyer saves {discount}%
               </p>
             )}
+            <div className="mt-3">
+              <label className="block text-[11px] font-medium text-text-secondary mb-1">Quantity in stock</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value.replace(/\D/g, "").slice(0, 3) || "1")}
+                className="w-24 px-2.5 py-2.5 text-[13px] border border-border rounded-lg bg-white text-text-primary outline-none"
+              />
+            </div>
           </section>
 
           {/* Condition */}

@@ -12,6 +12,7 @@ interface CreateListingInput {
   condition: string;
   price: number; // in rupees
   originalPrice?: number;
+  quantity?: number;
   description?: string;
   photos?: string[];
   videoUrl?: string;
@@ -58,6 +59,8 @@ export async function createListing(input: CreateListingInput) {
   // Trusted and premium vendors skip moderation.
   const autoApprove = vendor.certificationLevel === "trusted" || vendor.certificationLevel === "premium";
 
+  const qty = Math.max(1, Math.min(input.quantity ?? 1, 999));
+
   const listing = await prisma.listing.create({
     data: {
       productId: product.id,
@@ -66,6 +69,7 @@ export async function createListing(input: CreateListingInput) {
       condition: input.condition,
       price: Math.round(input.price * 100),
       originalPrice: input.originalPrice ? Math.round(input.originalPrice * 100) : null,
+      quantity: qty,
       description: input.description || null,
       photos: input.photos && input.photos.length > 0 ? JSON.stringify(input.photos) : null,
       videoUrl: input.videoUrl || null,

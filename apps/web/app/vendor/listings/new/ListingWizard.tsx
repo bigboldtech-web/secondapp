@@ -48,6 +48,7 @@ export default function ListingWizard({ catalog }: ListingWizardProps) {
   const [condition, setCondition] = useState("");
   const [price, setPrice] = useState("");
   const [originalPrice, setOriginalPrice] = useState("");
+  const [quantity, setQuantity] = useState("1");
   const [description, setDescription] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
@@ -149,7 +150,7 @@ export default function ListingWizard({ catalog }: ListingWizardProps) {
               <Link href="/vendor/dashboard" className="px-5 py-2.5 rounded-lg border border-border text-sm font-semibold text-text-primary no-underline">
                 Dashboard
               </Link>
-              <button onClick={() => { setSubmitted(false); setStep("category"); setCategoryId(""); setBrandId(""); setModelId(""); setSelectedSpecs({}); setCondition(""); setPrice(""); setOriginalPrice(""); setDescription(""); setPhotos([]); setVideoUrl(null); }} className="px-5 py-2.5 rounded-lg bg-coral text-white text-sm font-semibold border-none cursor-pointer">
+              <button onClick={() => { setSubmitted(false); setStep("category"); setCategoryId(""); setBrandId(""); setModelId(""); setSelectedSpecs({}); setCondition(""); setPrice(""); setOriginalPrice(""); setDescription(""); setPhotos([]); setVideoUrl(null); setQuantity("1"); }} className="px-5 py-2.5 rounded-lg bg-coral text-white text-sm font-semibold border-none cursor-pointer">
                 Post Another
               </button>
             </div>
@@ -426,6 +427,17 @@ export default function ListingWizard({ catalog }: ListingWizardProps) {
                     Buyer saves {Math.round(((parseInt(originalPrice) - parseInt(price)) / parseInt(originalPrice)) * 100)}% off original price
                   </div>
                 )}
+                <div>
+                  <label className="block text-[11px] font-medium text-text-secondary mb-1">Quantity (how many units?)</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value.replace(/\D/g, "").slice(0, 3) || "1")}
+                    className="w-24 px-3 py-2.5 text-[13px] text-text-primary border border-border rounded-lg bg-transparent"
+                  />
+                  <p className="text-[10px] text-text-muted mt-1">Default is 1. Set higher if you have multiple identical units.</p>
+                </div>
               </div>
             </>
           )}
@@ -493,6 +505,7 @@ export default function ListingWizard({ catalog }: ListingWizardProps) {
                     condition,
                     price: parseInt(price),
                     originalPrice: originalPrice ? parseInt(originalPrice) : undefined,
+                    quantity: parseInt(quantity) || 1,
                     description: description || undefined,
                     photos,
                     videoUrl: videoUrl || undefined,

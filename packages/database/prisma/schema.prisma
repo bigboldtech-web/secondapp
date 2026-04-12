@@ -161,6 +161,7 @@ model Listing {
   promotedUntil   DateTime?
   adminCertified  Boolean   @default(false)
   rejectionReason String?
+  quantity        Int       @default(1)
   viewCount       Int       @default(0)
   inquiryCount    Int       @default(0)
   createdAt       DateTime  @default(now())

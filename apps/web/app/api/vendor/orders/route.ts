@@ -71,10 +71,10 @@ export async function POST(request: Request) {
       where: { id: orderId },
       data: { orderStatus: "cancelled", paymentStatus: "refunded" },
     });
-    // Re-list the item so another buyer can purchase it.
+    // Return the unit to stock and reactivate the listing.
     await prisma.listing.update({
       where: { id: order.listingId },
-      data: { status: "active" },
+      data: { quantity: { increment: 1 }, status: "active" },
     });
     await prisma.notification.create({
       data: {
