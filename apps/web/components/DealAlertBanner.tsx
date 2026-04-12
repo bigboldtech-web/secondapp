@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 interface DealAlertBannerProps {
   isMobile: boolean;
 }
@@ -17,9 +19,12 @@ export default function DealAlertBanner({ isMobile }: DealAlertBannerProps) {
           Get notified when new items match your search.
         </p>
       </div>
-      <button className="px-3.5 py-[7px] rounded-md border border-border bg-white text-icon-active text-[11px] font-semibold cursor-pointer">
+      <Link
+        href="/alerts"
+        className="px-3.5 py-[7px] rounded-md border border-border bg-white text-icon-active text-[11px] font-semibold no-underline"
+      >
         Set alert
-      </button>
+      </Link>
     </div>
   );
 }

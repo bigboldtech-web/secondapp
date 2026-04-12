@@ -353,12 +353,13 @@ function ListingCard({ listing, categorySlug, isLowestPrice, rank, totalListings
           </div>
 
           {/* Buy Now button */}
-          <button
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-            className="w-full py-2 rounded-md bg-coral text-white text-[12px] font-semibold border-none cursor-pointer hover:bg-[#d44a34] transition-colors"
+          <a
+            href={`/checkout?listing=${listing.id}`}
+            onClick={(e) => e.stopPropagation()}
+            className="block w-full py-2 rounded-md bg-coral text-white text-[12px] font-semibold text-center no-underline hover:bg-[#d44a34] transition-colors"
           >
             Buy Now
-          </button>
+          </a>
 
           {/* FOMO */}
           {listing.viewCount > 80 && (
