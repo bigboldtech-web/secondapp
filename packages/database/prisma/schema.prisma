@@ -36,6 +36,7 @@ model User {
   collections   Collection[]
   reactions     ListingReaction[]
   comments      ListingComment[]
+  reports       ListingReport[]
 }
 
 // ============================================================
@@ -180,6 +181,7 @@ model Listing {
   chats     Chat[]
   reactions ListingReaction[]
   comments  ListingComment[]
+  reports   ListingReport[]
   collectionItems CollectionItem[]
 }
 
@@ -400,6 +402,21 @@ model SearchQueryLog {
 
   @@index([normalized])
   @@index([createdAt])
+}
+
+model ListingReport {
+  id        String   @id @default(cuid())
+  listingId String
+  userId    String
+  reason    String   // spam | fake | offensive | wrong_price | other
+  details   String?
+  status    String   @default("pending") // pending | reviewed | dismissed
+  createdAt DateTime @default(now())
+
+  listing Listing @relation(fields: [listingId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@unique([listingId, userId])
 }
 
 model ListingComment {
