@@ -1,6 +1,7 @@
 import { prisma } from "@second-app/database";
 import { getSession } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import { emailOrderShipped } from "@/lib/email-templates";
 
 type Action = "confirm" | "ship" | "cancel";
 
@@ -57,6 +58,20 @@ export async function POST(request: Request) {
         body: `Your order is on the way.${tracking ? ` Tracking: ${tracking}` : ""}`,
       },
     });
+
+    // Email the buyer (fire-and-forget)
+    const buyer = await prisma.user.findUnique({ where: { id: order.buyerId }, select: { name: true, email: true } });
+    const product = await prisma.listing.findUnique({ where: { id: order.listingId }, include: { product: { select: { displayName: true } } } });
+    if (buyer?.email) {
+      void emailOrderShipped({
+        buyerEmail: buyer.email,
+        buyerName: buyer.name,
+        productName: product?.product.displayName ?? "Product",
+        trackingNumber: tracking,
+        orderId,
+      });
+    }
+
     return NextResponse.json({ success: true });
   }
 

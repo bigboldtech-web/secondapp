@@ -3,6 +3,16 @@
 import { prisma } from "@second-app/database";
 import { revalidatePath } from "next/cache";
 
+async function notifyEmail(to: string, subject: string, text: string) {
+  if (!process.env.RESEND_API_KEY || !to) return;
+  const from = process.env.EMAIL_FROM || "Second App <noreply@gosecond.in>";
+  fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from, to, subject, text }),
+  }).catch(() => {});
+}
+
 export async function approveVendorKyc(vendorId: string) {
   const vendor = await prisma.vendor.update({
     where: { id: vendorId },
@@ -17,6 +27,12 @@ export async function approveVendorKyc(vendorId: string) {
       body: "Your vendor account has been verified. You can now list products.",
     },
   });
+
+  const user = await prisma.user.findUnique({ where: { id: vendor.userId }, select: { name: true, email: true } });
+  if (user?.email) {
+    void notifyEmail(user.email, "KYC approved — start selling on Second App",
+      `Hi ${user.name},\n\nYour vendor account has been verified! You can now list products and start selling.\n\nGo to your dashboard: https://gosecond.in/vendor/dashboard\n\n— Second App`);
+  }
 
   revalidatePath("/");
   return { success: true };
@@ -36,6 +52,12 @@ export async function rejectVendorKyc(vendorId: string) {
       body: "Your vendor verification was not approved. Please re-submit with valid documents.",
     },
   });
+
+  const user = await prisma.user.findUnique({ where: { id: vendor.userId }, select: { name: true, email: true } });
+  if (user?.email) {
+    void notifyEmail(user.email, "KYC verification update — Second App",
+      `Hi ${user.name},\n\nYour vendor verification was not approved. Please re-submit with valid documents.\n\nRegister again: https://gosecond.in/vendor/register\n\n— Second App`);
+  }
 
   revalidatePath("/");
   return { success: true };

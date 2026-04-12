@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getVendorBySlug } from "@/lib/db";
 import StorePageClient from "./StorePageClient";
+import { vendorStoreJsonLd, breadcrumbJsonLd } from "@/lib/seo";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -24,5 +25,24 @@ export default async function StorePage({ params }: { params: Promise<{ slug: st
 
   if (!vendor) notFound();
 
-  return <StorePageClient vendor={vendor} />;
+  const pageUrl = `https://gosecond.in/store/${slug}`;
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(vendorStoreJsonLd(vendor, pageUrl)) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbJsonLd([
+            { name: "Home", url: "/" },
+            { name: vendor.storeName },
+          ])),
+        }}
+      />
+      <StorePageClient vendor={vendor} />
+    </>
+  );
 }

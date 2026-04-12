@@ -7,6 +7,8 @@ import { formatPrice, formatTimeAgo, calcDiscount } from "@/lib/utils";
 import { CONDITION_COLORS, CATEGORY_ICONS } from "@/lib/types";
 import SimilarListings from "./SimilarListings";
 import AskQuestionButton from "./AskQuestionButton";
+import ReportButton from "./ReportButton";
+import { listingJsonLd, breadcrumbJsonLd } from "@/lib/seo";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -49,8 +51,25 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
     unverified: "New Seller",
   };
 
+  const pageUrl = `https://gosecond.in/listing/${id}`;
+
   return (
     <div className="min-h-screen bg-bg">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(listingJsonLd(listing, pageUrl)) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbJsonLd([
+            { name: "Home", url: "/" },
+            { name: listing.product.category.name, url: `/category/${listing.product.category.slug}` },
+            { name: listing.product.displayName, url: `/product/${listing.product.slug}` },
+            { name: `${listing.condition} — ₹${Math.round(listing.price / 100).toLocaleString("en-IN")}` },
+          ])),
+        }}
+      />
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white border-b border-border">
         <div className="mx-auto max-w-[1140px] px-4 sm:px-6 h-[52px] flex items-center gap-3">
@@ -142,6 +161,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
               <span>{listing.inquiryCount} inquiries</span>
               <span>Listed {formatTimeAgo(listing.createdAt)}</span>
             </div>
+            <ReportButton listingId={listing.id} />
           </div>
 
           {/* Right column — Price + Vendor */}

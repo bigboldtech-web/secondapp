@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getProductBySlug } from "@/lib/db";
 import ProductPageClient from "./ProductPageClient";
+import { productGroupJsonLd, breadcrumbJsonLd } from "@/lib/seo";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -29,5 +30,25 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   if (!product) notFound();
 
-  return <ProductPageClient product={product} />;
+  const pageUrl = `https://gosecond.in/product/${slug}`;
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productGroupJsonLd(product, pageUrl)) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbJsonLd([
+            { name: "Home", url: "/" },
+            { name: product.categoryName, url: `/category/${product.categorySlug}` },
+            { name: product.displayName },
+          ])),
+        }}
+      />
+      <ProductPageClient product={product} />
+    </>
+  );
 }

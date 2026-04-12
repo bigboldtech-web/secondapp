@@ -3,6 +3,7 @@
 import { prisma } from "@second-app/database";
 import { getSession } from "@/lib/auth";
 import { createPaymentOrder, paymentProvider, verifyPaymentSignature } from "@/lib/payments";
+import { emailOrderPlaced, emailVendorNewOrder } from "@/lib/email-templates";
 
 export async function createOrder(data: {
   listingId: string;
@@ -86,10 +87,22 @@ export async function createOrder(data: {
       userId: listing.vendor.userId,
       type: "order",
       title: "New order received!",
-      body: `Order for ₹${(listing.price / 100).toLocaleString("en-IN")} received. Please confirm within 24 hours.`,
+      body: `Order for ₹${(orderAmount / 100).toLocaleString("en-IN")} received. Please confirm within 24 hours.`,
       data: JSON.stringify({ link: `/vendor/orders` }),
     },
   });
+
+  // Email buyer + vendor (fire-and-forget, never blocks checkout)
+  const buyer = await prisma.user.findUnique({ where: { id: session.userId }, select: { name: true, email: true } });
+  const vendorUser = await prisma.user.findUnique({ where: { id: listing.vendor.userId }, select: { name: true, email: true } });
+  const productName = (await prisma.product.findUnique({ where: { id: listing.productId }, select: { displayName: true } }))?.displayName ?? "Product";
+
+  if (buyer?.email) {
+    void emailOrderPlaced({ buyerEmail: buyer.email, buyerName: buyer.name, productName, amount: orderAmount, orderId: order.id });
+  }
+  if (vendorUser?.email) {
+    void emailVendorNewOrder({ vendorEmail: vendorUser.email, vendorName: vendorUser.name, productName, amount: orderAmount, buyerName: buyer?.name ?? "A buyer" });
+  }
 
   return {
     success: true,

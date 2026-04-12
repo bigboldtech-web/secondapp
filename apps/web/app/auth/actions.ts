@@ -5,6 +5,7 @@ import { prisma } from "@second-app/database";
 import { setSessionCookie, clearSessionCookie } from "@/lib/auth";
 import { sendSms, generateOtp, isDevOtpMode } from "@/lib/notifications";
 import { rateLimitAll } from "@/lib/rate-limit";
+import { emailWelcome } from "@/lib/email-templates";
 
 async function callerIp(): Promise<string> {
   const h = await headers();
@@ -132,6 +133,7 @@ export async function registerUser(data: { name: string; phone: string; email?: 
   });
 
   await setSessionCookie(user.id);
+  if (data.email) void emailWelcome({ email: data.email, name: data.name });
   return { success: true, userId: user.id };
 }
 
