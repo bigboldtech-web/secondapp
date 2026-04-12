@@ -1,5 +1,6 @@
 import { prisma } from "@second-app/database";
 import { parseSpecs, parsePhotos } from "./utils";
+import { fullTextSearch, fullTextSearchBroad } from "./search/full-text";
 import type {
   ListingCardData,
   ProductDetail,
@@ -430,5 +431,39 @@ export async function searchListings(
   query: string,
   filters: Omit<ListingFilters, "search"> = {}
 ): Promise<ListingCardData[]> {
-  return getListings({ ...filters, search: query });
+  if (!query || query.trim().length < 2) {
+    return getListings(filters);
+  }
+
+  // Route through the Postgres FTS pipeline. Fall back to the old SQL
+  // contains-based match if the FTS library throws (e.g. the setup-fts
+  // script hasn't run yet on this database).
+  try {
+    let results = await fullTextSearch(query, {
+      categorySlug: filters.categorySlug,
+      city: filters.city,
+      condition: filters.condition,
+      minPrice: filters.minPrice,
+      maxPrice: filters.maxPrice,
+      limit: filters.limit,
+      offset: filters.offset,
+    });
+
+    // Zero-result recovery: drop the narrow filters and retry once. OLX
+    // does this at the app layer; we do it inline here so /search and the
+    // public API both get it for free.
+    if (results.length === 0) {
+      results = await fullTextSearchBroad(query, {
+        categorySlug: filters.categorySlug,
+        city: filters.city,
+        limit: filters.limit,
+        offset: filters.offset,
+      });
+    }
+
+    return results;
+  } catch (err) {
+    console.error("[search] fts pipeline failed, falling back to contains:", err);
+    return getListings({ ...filters, search: query });
+  }
 }

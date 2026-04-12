@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getListings } from "@/lib/db";
+import { getListings, searchListings } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -9,17 +9,23 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const limit = Math.min(Number(url.searchParams.get("limit") ?? "20"), 50);
   const offset = Math.max(Number(url.searchParams.get("offset") ?? "0"), 0);
+  const search = url.searchParams.get("search");
 
-  const listings = await getListings({
+  const filters = {
     categorySlug: url.searchParams.get("category"),
     city: url.searchParams.get("city"),
-    search: url.searchParams.get("search"),
     condition: url.searchParams.get("condition"),
     minPrice: url.searchParams.get("minPrice") ? Number(url.searchParams.get("minPrice")) : null,
     maxPrice: url.searchParams.get("maxPrice") ? Number(url.searchParams.get("maxPrice")) : null,
     limit,
     offset,
-  });
+  };
+
+  // Route free-text searches through the FTS pipeline; filter-only browsing
+  // still hits the index-backed getListings() path.
+  const listings = search && search.trim().length >= 2
+    ? await searchListings(search, filters)
+    : await getListings(filters);
 
   return NextResponse.json(
     {

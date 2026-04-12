@@ -15,6 +15,7 @@
     "db:migrate": "npm run db:migrate -w @second-app/database",
     "db:migrate:deploy": "npm run db:migrate:deploy -w @second-app/database",
     "db:seed": "npm run db:seed -w @second-app/database",
+    "db:setup-fts": "npm run db:setup-fts -w @second-app/database",
     "db:build-search-vocab": "npm run db:build-search-vocab -w @second-app/database",
     "db:studio": "npm run db:studio -w @second-app/database"
   },

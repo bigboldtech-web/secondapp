@@ -166,6 +166,12 @@ model Listing {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
+  // Populated by a Postgres trigger in scripts/setup-fts.sql — weighted
+  // tsvector over product/brand/model/description/specs for free-text
+  // ranking, plus a lowercased+unaccented text surface for trigram fuzzy.
+  searchVector Unsupported("tsvector")? @map("searchVector")
+  searchText   String?                   @map("searchText")
+
   product   Product          @relation(fields: [productId], references: [id])
   vendor    Vendor           @relation(fields: [vendorId], references: [id])
   orders    Order[]

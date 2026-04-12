@@ -20,8 +20,9 @@ cp .env.example .env
 # Fill in DATABASE_URL + JWT_SECRET at minimum
 npm install
 npm run db:generate
-npm run db:migrate          # creates the initial migration on first run
+npm run db:migrate           # creates the initial migration on first run
 npm run db:seed              # loads demo catalog + admin user (9999999999)
+npm run db:setup-fts         # installs pg_trgm/unaccent + FTS index + trigger
 npm run db:build-search-vocab
 npm run dev                  # starts apps/web and apps/admin via turbo
 ```
@@ -48,8 +49,11 @@ The app is designed to run on Vercel (one project per app) + a Postgres database
    ```bash
    DATABASE_URL=... npm run db:migrate:deploy
    DATABASE_URL=... npm run db:seed                  # only on a brand-new db
+   DATABASE_URL=... npm run db:setup-fts             # installs extensions + FTS index
    DATABASE_URL=... npm run db:build-search-vocab
    ```
+
+   `db:setup-fts` is idempotent — re-run it on every deploy so trigger and function body updates land.
 5. Build both apps: `turbo build`. Each Next.js app deploys as an independent project; point `gosecond.in` at `apps/web` and `admin.gosecond.in` at `apps/admin`.
 
 **Health checks**: `GET /api/health` on either app hits Postgres with `SELECT 1` and returns `{ ok, db, latencyMs }`. Wire that to your uptime monitor.
@@ -65,6 +69,7 @@ The app is designed to run on Vercel (one project per app) + a Postgres database
 | `npm run db:migrate` | Create + apply a dev migration (interactive) |
 | `npm run db:migrate:deploy` | Apply pending migrations in production |
 | `npm run db:seed` | Seed catalog + demo vendors + admin user |
+| `npm run db:setup-fts` | Install pg_trgm/unaccent + FTS index + trigger (idempotent) |
 | `npm run db:build-search-vocab` | Rebuild the autosuggest `SearchTerm` table |
 | `npm run db:studio` | Open Prisma Studio against `DATABASE_URL` |
 

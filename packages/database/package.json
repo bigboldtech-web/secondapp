@@ -13,6 +13,7 @@
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "tsx seed.ts",
+    "db:setup-fts": "tsx scripts/setup-fts.ts",
     "db:build-search-vocab": "tsx scripts/build-search-vocab.ts",
     "db:studio": "prisma studio"
   },
