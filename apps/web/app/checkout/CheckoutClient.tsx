@@ -38,11 +38,14 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
   const [city, setCity] = useState("");
   const [pincode, setPincode] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"upi" | "card" | "cod">("upi");
+  const [qty, setQty] = useState(1);
   const [placing, setPlacing] = useState(false);
 
+  const maxQty = listing.quantity ?? 1;
+  const lineTotal = listing.price * qty;
   const discount = calcDiscount(listing.price, listing.originalPrice);
-  const deliveryFee = listing.price > 50000 * 100 ? 0 : 9900; // Free above ₹50,000, else ₹99
-  const total = listing.price + deliveryFee;
+  const deliveryFee = lineTotal > 50000 * 100 ? 0 : 9900; // Free above ₹50,000, else ₹99
+  const total = lineTotal + deliveryFee;
 
   const addressValid = name.trim() && phone.length === 10 && address.trim() && city.trim() && pincode.length === 6;
 
@@ -53,6 +56,7 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
     setOrderError("");
     const result = await createOrder({
       listingId: listing.id,
+      quantity: qty,
       shippingAddress: { name, phone, address, city, pincode },
       paymentMethod,
     });
@@ -295,10 +299,26 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
                 </div>
               </div>
 
+              {maxQty > 1 && (
+                <div className="flex items-center gap-2 mb-3 pb-3 border-b border-border">
+                  <span className="text-[12px] text-text-secondary">Qty</span>
+                  <select
+                    value={qty}
+                    onChange={(e) => setQty(Number(e.target.value))}
+                    className="text-[12px] px-2 py-1 rounded-md border border-border bg-white text-text-primary cursor-pointer"
+                  >
+                    {Array.from({ length: maxQty }, (_, i) => i + 1).map((n) => (
+                      <option key={n} value={n}>{n}</option>
+                    ))}
+                  </select>
+                  <span className="text-[10px] text-text-muted">{maxQty} available</span>
+                </div>
+              )}
+
               <div className="space-y-1.5 text-[13px]">
                 <div className="flex justify-between">
-                  <span className="text-text-secondary">Price</span>
-                  <span className="text-text-primary font-medium">{formatPrice(listing.price)}</span>
+                  <span className="text-text-secondary">{qty > 1 ? `${qty} × ${formatPrice(listing.price)}` : "Price"}</span>
+                  <span className="text-text-primary font-medium">{formatPrice(lineTotal)}</span>
                 </div>
                 {listing.originalPrice && (
                   <div className="flex justify-between">

@@ -6,6 +6,7 @@ import { createPaymentOrder, paymentProvider, verifyPaymentSignature } from "@/l
 
 export async function createOrder(data: {
   listingId: string;
+  quantity?: number;
   shippingAddress: { name: string; phone: string; address: string; city: string; pincode: string };
   paymentMethod: string;
 }) {
@@ -21,11 +22,12 @@ export async function createOrder(data: {
     return { error: "Listing no longer available" };
   }
 
+  const orderQty = Math.max(1, Math.min(data.quantity ?? 1, listing.quantity));
+  const orderAmount = listing.price * orderQty;
   const commissionRate = 0.07; // 7%
   const isCod = data.paymentMethod === "cod";
 
   const provider = paymentProvider();
-  // mock mode settles instantly; real Razorpay stays "pending" until client verifies.
   const initialPaymentStatus = isCod
     ? "pending"
     : provider === "mock"
@@ -37,21 +39,20 @@ export async function createOrder(data: {
       listingId: listing.id,
       buyerId: session.userId,
       vendorId: listing.vendorId,
-      amount: listing.price,
-      commissionAmount: Math.floor(listing.price * commissionRate),
+      amount: orderAmount,
+      commissionAmount: Math.floor(orderAmount * commissionRate),
       paymentStatus: initialPaymentStatus,
       orderStatus: "placed",
       shippingAddress: JSON.stringify(data.shippingAddress),
     },
   });
 
-  // Decrement stock. When it hits 0, mark the listing as sold so no more
-  // orders can come in. Listings with quantity > 1 stay active.
-  const newQty = listing.quantity - 1;
+  // Decrement stock by the ordered quantity. When it hits 0, mark sold.
+  const newQty = listing.quantity - orderQty;
   await prisma.listing.update({
     where: { id: listing.id },
     data: {
-      quantity: newQty,
+      quantity: Math.max(0, newQty),
       ...(newQty <= 0 ? { status: "sold" } : {}),
     },
   });

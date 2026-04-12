@@ -89,6 +89,7 @@ export interface ListingDetail {
   id: string;
   price: number;
   originalPrice: number | null;
+  quantity: number;
   condition: string;
   specs: Record<string, string>;
   description: string | null;

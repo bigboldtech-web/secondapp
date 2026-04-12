@@ -259,6 +259,7 @@ export async function getListingById(id: string): Promise<ListingDetail | null> 
     id: listing.id,
     price: listing.price,
     originalPrice: listing.originalPrice,
+    quantity: listing.quantity,
     condition: listing.condition,
     specs: parseSpecs(listing.specs),
     description: listing.description,

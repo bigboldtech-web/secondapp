@@ -108,5 +108,11 @@ export async function startChat(listingId: string) {
     data: { listingId, buyerId: session.userId, vendorId: listing.vendorId },
   });
 
+  // First inquiry on this listing from this buyer — bump the counter.
+  void prisma.listing.update({
+    where: { id: listingId },
+    data: { inquiryCount: { increment: 1 } },
+  }).catch(() => {});
+
   return { chatId: chat.id };
 }

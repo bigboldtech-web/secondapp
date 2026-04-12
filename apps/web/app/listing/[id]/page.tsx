@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { prisma } from "@second-app/database";
 import { getListingById, getSimilarListings } from "@/lib/db";
 import { formatPrice, formatTimeAgo, calcDiscount } from "@/lib/utils";
 import { CONDITION_COLORS, CATEGORY_ICONS } from "@/lib/types";
@@ -29,6 +30,12 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
   const listing = await getListingById(id);
 
   if (!listing) notFound();
+
+  // Fire-and-forget view increment so it doesn't block rendering.
+  void prisma.listing.update({
+    where: { id },
+    data: { viewCount: { increment: 1 } },
+  }).catch(() => {});
 
   const similar = await getSimilarListings(listing.product.slug, listing.id, 6);
   const condStyle = CONDITION_COLORS[listing.condition] || { bg: "bg-gray-100", text: "text-gray-700" };
