@@ -129,6 +129,12 @@ export default function VendorListingsClient({ listings }: { listings: VendorLis
                   </Link>
                   {listing.status === "active" && (
                     <>
+                      <Link
+                        href={`/vendor/listings/${listing.id}/boost`}
+                        className="text-[10px] px-2.5 py-1.5 rounded-md bg-coral text-white font-semibold no-underline"
+                      >
+                        Boost
+                      </Link>
                       <button
                         onClick={() => handleAction(listing.id, "sold")}
                         disabled={actionLoading === listing.id}

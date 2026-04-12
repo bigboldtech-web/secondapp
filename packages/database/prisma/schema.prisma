@@ -36,7 +36,8 @@ model User {
   collections   Collection[]
   reactions     ListingReaction[]
   comments      ListingComment[]
-  reports       ListingReport[]
+  reports        ListingReport[]
+  recentlyViewed RecentlyViewed[]
 }
 
 // ============================================================
@@ -181,7 +182,8 @@ model Listing {
   chats     Chat[]
   reactions ListingReaction[]
   comments  ListingComment[]
-  reports   ListingReport[]
+  reports        ListingReport[]
+  recentlyViewed RecentlyViewed[]
   collectionItems CollectionItem[]
 }
 
@@ -402,6 +404,19 @@ model SearchQueryLog {
 
   @@index([normalized])
   @@index([createdAt])
+}
+
+model RecentlyViewed {
+  id        String   @id @default(cuid())
+  userId    String
+  listingId String
+  viewedAt  DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  listing Listing @relation(fields: [listingId], references: [id])
+
+  @@unique([userId, listingId])
+  @@index([userId, viewedAt(sort: Desc)])
 }
 
 model ListingReport {

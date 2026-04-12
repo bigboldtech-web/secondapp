@@ -33,11 +33,38 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
 
   if (!listing) notFound();
 
-  // Fire-and-forget view increment so it doesn't block rendering.
+  // Fire-and-forget: view count + recently-viewed tracking.
   void prisma.listing.update({
     where: { id },
     data: { viewCount: { increment: 1 } },
   }).catch(() => {});
+
+  // Track recently viewed for logged-in users (upsert so re-visits just bump viewedAt).
+  void (async () => {
+    try {
+      const { getSession } = await import("@/lib/auth");
+      const session = await getSession();
+      if (session) {
+        await prisma.recentlyViewed.upsert({
+          where: { userId_listingId: { userId: session.userId, listingId: id } },
+          create: { userId: session.userId, listingId: id },
+          update: { viewedAt: new Date() },
+        });
+        // Cap at 30 entries per user
+        const old = await prisma.recentlyViewed.findMany({
+          where: { userId: session.userId },
+          orderBy: { viewedAt: "desc" },
+          skip: 30,
+          select: { id: true },
+        });
+        if (old.length > 0) {
+          await prisma.recentlyViewed.deleteMany({
+            where: { id: { in: old.map((r) => r.id) } },
+          });
+        }
+      }
+    } catch { /* never block render */ }
+  })();
 
   const similar = await getSimilarListings(listing.product.slug, listing.id, 6);
   const condStyle = CONDITION_COLORS[listing.condition] || { bg: "bg-gray-100", text: "text-gray-700" };

@@ -1,6 +1,9 @@
+import { prisma } from "@second-app/database";
 import { getListings, getCategoriesWithCounts } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { parseSpecs, parsePhotos } from "@/lib/utils";
 import Homepage from "@/components/Homepage";
+import type { ListingCardData } from "@/lib/types";
 
 export default async function Home() {
   const [listings, categories, session] = await Promise.all([
@@ -9,12 +12,56 @@ export default async function Home() {
     getSession(),
   ]);
 
+  // Fetch recently viewed for logged-in users (last 10, active only).
+  let recentlyViewed: ListingCardData[] = [];
+  if (session) {
+    try {
+      const recent = await prisma.recentlyViewed.findMany({
+        where: { userId: session.userId },
+        orderBy: { viewedAt: "desc" },
+        take: 10,
+        include: {
+          listing: {
+            include: {
+              product: { include: { category: { select: { slug: true } } } },
+              vendor: { select: { storeName: true, storeSlug: true, certificationLevel: true, locationCity: true } },
+            },
+          },
+        },
+      });
+      recentlyViewed = recent
+        .filter((r) => r.listing.status === "active")
+        .map((r) => {
+          const l = r.listing;
+          return {
+            id: l.id,
+            title: l.product.displayName,
+            price: l.price,
+            originalPrice: l.originalPrice,
+            condition: l.condition,
+            specs: parseSpecs(l.specs),
+            thumbnail: parsePhotos(l.photos)[0] ?? null,
+            vendorName: l.vendor.storeName,
+            vendorSlug: l.vendor.storeSlug,
+            vendorCertification: l.vendor.certificationLevel,
+            productSlug: l.product.slug,
+            categorySlug: l.product.category.slug,
+            location: l.vendor.locationCity || "India",
+            createdAt: l.createdAt,
+            isFeatured: l.isFeatured,
+            adminCertified: l.adminCertified,
+          };
+        });
+    } catch { /* silently skip if table doesn't exist yet */ }
+  }
+
   return (
     <Homepage
       listings={listings}
       categories={categories}
       isLoggedIn={!!session}
       userName={session?.user?.name}
+      recentlyViewed={recentlyViewed}
     />
   );
 }
