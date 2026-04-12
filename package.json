@@ -11,14 +11,14 @@
     "dev": "turbo dev",
     "build": "turbo build",
     "lint": "turbo lint",
-    "db:generate": "prisma generate --schema packages/database/prisma/schema.prisma",
-    "db:push": "prisma db push --schema packages/database/prisma/schema.prisma",
-    "db:migrate": "prisma migrate dev --schema packages/database/prisma/schema.prisma",
-    "db:migrate:deploy": "prisma migrate deploy --schema packages/database/prisma/schema.prisma",
-    "db:seed": "tsx packages/database/seed.ts",
-    "db:setup-fts": "tsx packages/database/scripts/setup-fts.ts",
-    "db:build-search-vocab": "tsx packages/database/scripts/build-search-vocab.ts",
-    "db:studio": "prisma studio --schema packages/database/prisma/schema.prisma"
+    "db:generate": "cd packages/database && prisma generate",
+    "db:push": "cd packages/database && prisma db push",
+    "db:migrate": "cd packages/database && prisma migrate dev",
+    "db:migrate:deploy": "cd packages/database && prisma migrate deploy",
+    "db:seed": "cd packages/database && tsx seed.ts",
+    "db:setup-fts": "cd packages/database && tsx scripts/setup-fts.ts",
+    "db:build-search-vocab": "cd packages/database && tsx scripts/build-search-vocab.ts",
+    "db:studio": "cd packages/database && prisma studio"
   },
   "devDependencies": {
     "prisma": "^6.0.0",
