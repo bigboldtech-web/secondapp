@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { sendMessage, getChatMessages } from "../actions";
 
@@ -23,33 +23,79 @@ export default function ChatClient({ chatId, initialMessages, chatInfo }: ChatCl
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const prevCountRef = useRef(initialMessages.length);
 
-  useEffect(() => {
+  const scrollToBottom = useCallback(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, []);
 
-  // Poll for new messages every 5 seconds
+  useEffect(() => scrollToBottom(), [messages, scrollToBottom]);
+
+  // Adaptive polling: 3s when chat is focused, 10s when tab is hidden.
   useEffect(() => {
-    const interval = setInterval(async () => {
-      const { messages: newMessages } = await getChatMessages(chatId);
-      if (newMessages.length !== messages.length) setMessages(newMessages);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [chatId, messages.length]);
+    let active = true;
+    const poll = async () => {
+      if (!active) return;
+      try {
+        const { messages: fresh } = await getChatMessages(chatId);
+        if (!active) return;
+        if (fresh.length !== prevCountRef.current) {
+          setMessages(fresh);
+          prevCountRef.current = fresh.length;
+        }
+      } catch { /* swallow */ }
+    };
+
+    let interval: ReturnType<typeof setInterval>;
+    const start = () => {
+      const ms = document.hidden ? 10000 : 3000;
+      clearInterval(interval);
+      interval = setInterval(poll, ms);
+    };
+    start();
+    const onVisChange = () => start();
+    document.addEventListener("visibilitychange", onVisChange);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisChange);
+    };
+  }, [chatId]);
 
   const handleSend = async () => {
-    if (!input.trim() || sending) return;
-    setSending(true);
-    await sendMessage(chatId, input.trim());
+    const text = input.trim();
+    if (!text || sending) return;
+
+    // Optimistic insert — appears instantly while the server call runs.
+    const optimistic: Message = {
+      id: `optimistic-${Date.now()}`,
+      content: text,
+      senderName: "You",
+      isMe: true,
+      createdAt: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, optimistic]);
     setInput("");
-    const { messages: updated } = await getChatMessages(chatId);
-    setMessages(updated);
+    setSending(true);
+
+    const result = await sendMessage(chatId, text);
+    if (result.error) {
+      // Roll back the optimistic message on failure.
+      setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
+      setSending(false);
+      return;
+    }
+
+    // Replace with server-confirmed messages.
+    const { messages: confirmed } = await getChatMessages(chatId);
+    setMessages(confirmed);
+    prevCountRef.current = confirmed.length;
     setSending(false);
   };
 
   return (
     <div className="flex flex-col h-screen bg-bg">
-      {/* Header */}
       <header className="bg-white border-b border-border px-4 py-3 flex items-center gap-3 shrink-0">
         <Link href="/inbox" className="text-text-muted no-underline">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
@@ -60,11 +106,21 @@ export default function ChatClient({ chatId, initialMessages, chatInfo }: ChatCl
         </div>
       </header>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+        {messages.length === 0 && (
+          <p className="text-center text-[12px] text-text-muted py-8">
+            Start the conversation — ask about condition, accessories, or availability.
+          </p>
+        )}
         {messages.map((msg) => (
           <div key={msg.id} className={`flex ${msg.isMe ? "justify-end" : "justify-start"}`}>
-            <div className={`max-w-[75%] px-3.5 py-2.5 rounded-2xl ${msg.isMe ? "bg-coral text-white rounded-br-md" : "bg-white border border-border text-text-primary rounded-bl-md"}`}>
+            <div
+              className={`max-w-[75%] px-3.5 py-2.5 rounded-2xl ${
+                msg.isMe
+                  ? "bg-coral text-white rounded-br-md"
+                  : "bg-white border border-border text-text-primary rounded-bl-md"
+              } ${msg.id.startsWith("optimistic") ? "opacity-70" : ""}`}
+            >
               <p className="text-[13px] leading-relaxed">{msg.content}</p>
               <p className={`text-[9px] mt-1 ${msg.isMe ? "text-white/60" : "text-text-faint"}`}>
                 {new Date(msg.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
@@ -75,15 +131,14 @@ export default function ChatClient({ chatId, initialMessages, chatInfo }: ChatCl
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
       <div className="bg-white border-t border-border px-4 py-3 flex gap-2 shrink-0">
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
           placeholder="Type a message..."
-          className="flex-1 px-3.5 py-2.5 text-[13px] border border-border rounded-full bg-input-light text-text-primary"
+          className="flex-1 px-3.5 py-2.5 text-[13px] border border-border rounded-full bg-input-light text-text-primary outline-none focus:border-coral-border"
         />
         <button
           onClick={handleSend}
