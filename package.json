@@ -2,6 +2,7 @@
   "name": "second-app",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@9.15.4",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -10,16 +11,18 @@
     "dev": "turbo dev",
     "build": "turbo build",
     "lint": "turbo lint",
-    "db:generate": "npm run db:generate -w @second-app/database",
-    "db:push": "npm run db:push -w @second-app/database",
-    "db:migrate": "npm run db:migrate -w @second-app/database",
-    "db:migrate:deploy": "npm run db:migrate:deploy -w @second-app/database",
-    "db:seed": "npm run db:seed -w @second-app/database",
-    "db:setup-fts": "npm run db:setup-fts -w @second-app/database",
-    "db:build-search-vocab": "npm run db:build-search-vocab -w @second-app/database",
-    "db:studio": "npm run db:studio -w @second-app/database"
+    "db:generate": "prisma generate --schema packages/database/prisma/schema.prisma",
+    "db:push": "prisma db push --schema packages/database/prisma/schema.prisma",
+    "db:migrate": "prisma migrate dev --schema packages/database/prisma/schema.prisma",
+    "db:migrate:deploy": "prisma migrate deploy --schema packages/database/prisma/schema.prisma",
+    "db:seed": "tsx packages/database/seed.ts",
+    "db:setup-fts": "tsx packages/database/scripts/setup-fts.ts",
+    "db:build-search-vocab": "tsx packages/database/scripts/build-search-vocab.ts",
+    "db:studio": "prisma studio --schema packages/database/prisma/schema.prisma"
   },
   "devDependencies": {
+    "prisma": "^6.0.0",
+    "tsx": "^4.0.0",
     "turbo": "^2.0.0"
   },
   "engines": {

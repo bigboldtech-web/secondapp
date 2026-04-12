@@ -18,14 +18,16 @@ Monorepo, managed by [Turborepo](https://turbo.build):
 ```bash
 cp .env.example .env
 # Fill in DATABASE_URL + JWT_SECRET at minimum
-npm install
-npm run db:generate
-npm run db:migrate           # creates the initial migration on first run
-npm run db:seed              # loads demo catalog + admin user (9999999999)
-npm run db:setup-fts         # installs pg_trgm/unaccent + FTS index + trigger
-npm run db:build-search-vocab
-npm run dev                  # starts apps/web and apps/admin via turbo
+pnpm install                 # or npm install — both work
+pnpm run db:generate
+pnpm run db:migrate          # creates the initial migration on first run
+pnpm run db:seed             # loads demo catalog + admin user (9999999999)
+pnpm run db:setup-fts        # installs pg_trgm/unaccent + FTS index + trigger
+pnpm run db:build-search-vocab
+pnpm run dev                 # starts apps/web and apps/admin via turbo
 ```
+
+The monorepo is pnpm-first (see `pnpm-workspace.yaml` and the `packageManager` field in `package.json`). npm works too — all root scripts use binaries directly rather than `-w`/`--filter` so they're package-manager-agnostic.
 
 Web lives on `http://localhost:3000`, admin on `http://localhost:3001` (or whichever port Next picks).
 
