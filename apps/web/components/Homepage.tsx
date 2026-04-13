@@ -15,9 +15,10 @@ interface HomepageProps {
   isLoggedIn?: boolean;
   userName?: string;
   recentlyViewed?: ListingCardData[];
+  forYou?: ListingCardData[];
 }
 
-export default function Homepage({ listings, categories, isLoggedIn, userName, recentlyViewed }: HomepageProps) {
+export default function Homepage({ listings, categories, isLoggedIn, userName, recentlyViewed, forYou }: HomepageProps) {
   const [city, setCity] = useState("All India");
   const [isMobile, setIsMobile] = useState(false);
 
@@ -46,6 +47,22 @@ export default function Homepage({ listings, categories, isLoggedIn, userName, r
             </h2>
             <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
               {recentlyViewed.map((item) => (
+                <div key={item.id} className="shrink-0" style={{ width: isMobile ? 140 : 180 }}>
+                  <ProductCard item={item} compact />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Personalized "For you" */}
+        {forYou && forYou.length > 0 && (
+          <section className="mb-6">
+            <h2 className={`font-bold text-text-primary mb-2 px-1 ${isMobile ? "text-sm" : "text-[15px]"}`}>
+              Recommended for you
+            </h2>
+            <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
+              {forYou.map((item) => (
                 <div key={item.id} className="shrink-0" style={{ width: isMobile ? 140 : 180 }}>
                   <ProductCard item={item} compact />
                 </div>
