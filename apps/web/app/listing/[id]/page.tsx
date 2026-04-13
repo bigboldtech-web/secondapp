@@ -9,6 +9,9 @@ import SimilarListings from "./SimilarListings";
 import AskQuestionButton from "./AskQuestionButton";
 import ReportButton from "./ReportButton";
 import SuggestedQuestions from "./SuggestedQuestions";
+import ReactionsComments from "./ReactionsComments";
+import ShareButton from "./ShareButton";
+import { getReactionsAndComments } from "./actions";
 import { listingJsonLd, breadcrumbJsonLd } from "@/lib/seo";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -67,7 +70,10 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
     } catch { /* never block render */ }
   })();
 
-  const similar = await getSimilarListings(listing.product.slug, listing.id, 6);
+  const [similar, { reactions, comments }] = await Promise.all([
+    getSimilarListings(listing.product.slug, listing.id, 6),
+    getReactionsAndComments(id),
+  ]);
   const condStyle = CONDITION_COLORS[listing.condition] || { bg: "bg-gray-100", text: "text-gray-700" };
   const discount = calcDiscount(listing.price, listing.originalPrice);
   const icon = CATEGORY_ICONS[listing.product.category.slug] || CATEGORY_ICONS.phones;
@@ -183,13 +189,19 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
               </div>
             )}
 
+            {/* Reactions + comments */}
+            <ReactionsComments listingId={listing.id} reactions={reactions} comments={comments} />
+
             {/* Stats */}
             <div className="flex gap-4 text-[11px] text-text-muted px-1 mb-4">
               <span>{listing.viewCount} views</span>
               <span>{listing.inquiryCount} inquiries</span>
               <span>Listed {formatTimeAgo(listing.createdAt)}</span>
             </div>
-            <ReportButton listingId={listing.id} />
+            <div className="flex gap-4">
+              <ShareButton title={`${listing.product.displayName} — ${formatPrice(listing.price)}`} url={`/listing/${listing.id}`} />
+              <ReportButton listingId={listing.id} />
+            </div>
           </div>
 
           {/* Right column — Price + Vendor */}

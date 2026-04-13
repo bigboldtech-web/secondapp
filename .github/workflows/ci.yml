@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: cd packages/database && npx prisma generate
+
+      - name: Typecheck web
+        run: cd apps/web && npx tsc --noEmit -p .
+
+      - name: Typecheck admin
+        run: cd apps/admin && npx tsc --noEmit -p .
+
+      - name: Build web
+        run: cd apps/web && npx next build
+        env:
+          DATABASE_URL: "postgresql://fake:fake@localhost:5432/fake"
+          JWT_SECRET: "ci-test-secret-not-real"
+
+      - name: Build admin
+        run: cd apps/admin && npx next build
+        env:
+          DATABASE_URL: "postgresql://fake:fake@localhost:5432/fake"
+          JWT_SECRET: "ci-test-secret-not-real"

@@ -141,6 +141,15 @@ export default function AdminDashboard({ stats, recentListings, recentVendors, c
             </svg>
             Reports
           </Link>
+          <Link
+            href="/revenue"
+            className="w-full flex items-center gap-2.5 px-5 py-2.5 text-[13px] font-medium text-[#666] hover:bg-[#f8f8f8] no-underline"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 20V10M18 20V4M6 20v-4" />
+            </svg>
+            Revenue
+          </Link>
         </nav>
       </aside>
 
