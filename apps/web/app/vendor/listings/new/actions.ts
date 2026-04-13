@@ -25,6 +25,16 @@ export async function createListing(input: CreateListingInput) {
   const vendor = await prisma.vendor.findUnique({ where: { userId: session.userId } });
   if (!vendor) return { error: "You must register as a vendor before posting listings" };
 
+  // Enforce subscription listing cap.
+  const activeCount = await prisma.listing.count({
+    where: { vendorId: vendor.id, status: { in: ["active", "pending"] } },
+  });
+  if (activeCount >= vendor.maxListings) {
+    return {
+      error: `You've reached your ${vendor.maxListings}-listing limit on the ${vendor.subscriptionPlan} plan. Upgrade at /vendor/subscription to list more.`,
+    };
+  }
+
   if (!input.price || input.price <= 0) return { error: "Please enter a valid price" };
   if (!input.condition) return { error: "Please select a condition" };
 

@@ -64,11 +64,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: `Unsupported file type for ${kind}` }, { status: 415 });
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
+  const rawBuffer = Buffer.from(await file.arrayBuffer());
+
+  // Optimize images (resize to 1200px max width + convert to WebP) when
+  // sharp is available. Falls through to the original buffer otherwise.
+  const { optimizeImage } = await import("@/lib/image-optimize");
+  const { buffer, contentType, optimized } = await optimizeImage(rawBuffer, file.type);
+
+  const filename = optimized ? file.name.replace(/\.[^.]+$/, ".webp") : file.name;
   const result = await uploadFile({
     buffer,
-    filename: file.name,
-    contentType: file.type,
+    filename,
+    contentType,
     folder: spec.folder,
   });
 

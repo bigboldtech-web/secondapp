@@ -6,6 +6,8 @@ import 'screens/home_screen.dart';
 import 'screens/listing_detail_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/saved_screen.dart';
+import 'screens/checkout_screen.dart';
 import 'theme.dart';
 
 void main() async {
@@ -57,6 +59,7 @@ class _SecondAppState extends State<SecondApp> {
           "/": (_) => const HomeScreen(),
           "/login": (_) => const LoginScreen(),
           "/profile": (_) => const ProfileScreen(),
+          "/saved": (_) => const SavedScreen(),
         },
         onGenerateRoute: (settings) {
           if (settings.name?.startsWith("/listing/") ?? false) {

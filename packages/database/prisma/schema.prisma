@@ -22,6 +22,8 @@ model User {
   locationCity String?
   locationLat  Float?
   locationLng  Float?
+  referralCode String?  @unique
+  credits      Int      @default(0) // in paise, earned via referrals
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -36,8 +38,10 @@ model User {
   collections   Collection[]
   reactions     ListingReaction[]
   comments      ListingComment[]
-  reports        ListingReport[]
-  recentlyViewed RecentlyViewed[]
+  reports           ListingReport[]
+  recentlyViewed    RecentlyViewed[]
+  referralsMade     Referral[]      @relation("ReferralsMade")
+  referralsReceived Referral[]      @relation("ReferralsReceived")
 }
 
 // ============================================================
@@ -61,6 +65,9 @@ model Vendor {
   ratingCount        Int      @default(0)
   totalSales         Int      @default(0)
   totalListings      Int      @default(0)
+  subscriptionPlan   String   @default("free") // free | pro | business
+  subscriptionEndsAt DateTime?
+  maxListings        Int      @default(10)     // free=10, pro=unlimited(999), business=unlimited(999)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -404,6 +411,19 @@ model SearchQueryLog {
 
   @@index([normalized])
   @@index([createdAt])
+}
+
+model Referral {
+  id            String   @id @default(cuid())
+  referrerId    String
+  referredId    String   @unique
+  referralCode  String
+  creditAmount  Int      @default(10000) // ₹100 in paise
+  status        String   @default("pending") // pending | credited
+  createdAt     DateTime @default(now())
+
+  referrer User @relation("ReferralsMade", fields: [referrerId], references: [id])
+  referred User @relation("ReferralsReceived", fields: [referredId], references: [id])
 }
 
 model RecentlyViewed {
