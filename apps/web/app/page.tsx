@@ -3,13 +3,14 @@ import { getListings, getCategoriesWithCounts } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { parseSpecs, parsePhotos } from "@/lib/utils";
 import { getPersonalizedListingIds } from "@/lib/personalize";
+import { cached } from "@/lib/cache";
 import Homepage from "@/components/Homepage";
 import type { ListingCardData } from "@/lib/types";
 
 export default async function Home() {
   const [listings, categories, session] = await Promise.all([
-    getListings({ limit: 50 }),
-    getCategoriesWithCounts(),
+    cached("home:listings", 30_000, () => getListings({ limit: 50 })),
+    cached("home:categories", 300_000, () => getCategoriesWithCounts()),
     getSession(),
   ]);
 

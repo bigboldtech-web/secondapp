@@ -4,18 +4,17 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { getUnreadCount } from "@/app/notifications/actions";
-
-const NAV_ITEMS = [
-  { id: "home", label: "Home", href: "/", icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" },
-  { id: "search", label: "Explore", href: "/search", icon: "M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" },
-  { id: "sell", label: "Sell", href: "/vendor/listings/new", icon: "M12 5v14M5 12h14" },
-  { id: "inbox", label: "Inbox", href: "/inbox", icon: "M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" },
-  { id: "me", label: "Me", href: "/profile", icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" },
-];
+import { t, getLocaleFromCookie, type Locale } from "@/lib/i18n";
 
 export default function BottomNav() {
   const pathname = usePathname();
   const [unread, setUnread] = useState(0);
+  const [locale, setLocale] = useState<Locale>("en");
+
+  useEffect(() => {
+    const cookie = document.cookie.split("; ").find((c) => c.startsWith("sa_locale="))?.split("=")[1];
+    setLocale(getLocaleFromCookie(cookie));
+  }, []);
 
   useEffect(() => {
     getUnreadCount().then((c) => setUnread(c)).catch(() => {});
@@ -30,9 +29,17 @@ export default function BottomNav() {
     return pathname.startsWith(href);
   };
 
+  const items = [
+    { id: "home", label: t("nav.home", locale), href: "/", icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" },
+    { id: "search", label: t("nav.explore", locale), href: "/search", icon: "M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" },
+    { id: "sell", label: t("nav.sell", locale), href: "/vendor/listings/new", icon: "M12 5v14M5 12h14" },
+    { id: "inbox", label: t("nav.inbox", locale), href: "/inbox", icon: "M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" },
+    { id: "me", label: t("nav.me", locale), href: "/profile", icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" },
+  ];
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-border flex z-[200] pb-[env(safe-area-inset-bottom)] sm:hidden">
-      {NAV_ITEMS.map((item) => (
+      {items.map((item) => (
         <Link
           key={item.id}
           href={item.href}
