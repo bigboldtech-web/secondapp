@@ -42,6 +42,7 @@ model User {
   recentlyViewed    RecentlyViewed[]
   referralsMade     Referral[]      @relation("ReferralsMade")
   referralsReceived Referral[]      @relation("ReferralsReceived")
+  affiliateClicks   AffiliateClick[] @relation("AffiliateClicks")
 }
 
 // ============================================================
@@ -191,7 +192,8 @@ model Listing {
   comments  ListingComment[]
   reports        ListingReport[]
   recentlyViewed RecentlyViewed[]
-  collectionItems CollectionItem[]
+  collectionItems  CollectionItem[]
+  affiliateClicks  AffiliateClick[]
 }
 
 // ============================================================
@@ -411,6 +413,22 @@ model SearchQueryLog {
 
   @@index([normalized])
   @@index([createdAt])
+}
+
+model AffiliateClick {
+  id         String   @id @default(cuid())
+  listingId  String
+  affiliateId String
+  ip         String?
+  converted  Boolean  @default(false)
+  orderId    String?
+  commission Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  listing   Listing @relation(fields: [listingId], references: [id])
+  affiliate User    @relation("AffiliateClicks", fields: [affiliateId], references: [id])
+
+  @@index([listingId, affiliateId])
 }
 
 model Referral {

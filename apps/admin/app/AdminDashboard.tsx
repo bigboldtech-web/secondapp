@@ -150,6 +150,15 @@ export default function AdminDashboard({ stats, recentListings, recentVendors, c
             </svg>
             Revenue
           </Link>
+          <Link
+            href="/growth"
+            className="w-full flex items-center gap-2.5 px-5 py-2.5 text-[13px] font-medium text-[#666] hover:bg-[#f8f8f8] no-underline"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+            </svg>
+            Growth
+          </Link>
         </nav>
       </aside>
 

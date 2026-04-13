@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { prisma } from "@second-app/database";
 import { getListingById, getSimilarListings } from "@/lib/db";
+import { getSession } from "@/lib/auth";
 import { formatPrice, formatTimeAgo, calcDiscount } from "@/lib/utils";
 import { CONDITION_COLORS, CATEGORY_ICONS } from "@/lib/types";
 import SimilarListings from "./SimilarListings";
@@ -67,9 +68,10 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
     } catch {}
   })();
 
-  const [similar, { reactions, comments }] = await Promise.all([
+  const [similar, { reactions, comments }, session] = await Promise.all([
     getSimilarListings(listing.product.slug, listing.id, 6),
     getReactionsAndComments(id),
+    getSession(),
   ]);
   const condStyle = CONDITION_COLORS[listing.condition] || { bg: "bg-gray-100", text: "text-gray-700" };
   const discount = calcDiscount(listing.price, listing.originalPrice);
@@ -196,7 +198,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
               <span>Listed {formatTimeAgo(listing.createdAt)}</span>
             </div>
             <div className="flex gap-4">
-              <ShareButton title={`${listing.product.displayName} — ${formatPrice(listing.price)}`} url={`/listing/${listing.id}`} />
+              <ShareButton title={`${listing.product.displayName} — ${formatPrice(listing.price)}`} url={`/listing/${listing.id}`} listingId={listing.id} userId={session?.userId ?? null} />
               <ReportButton listingId={listing.id} />
             </div>
           </div>
