@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { ListingCardData, CategoryWithCount } from "@/lib/types";
+import { t, getLocaleFromCookie, type Locale } from "@/lib/i18n";
 import Header from "./Header";
 import ProductGrid from "./ProductGrid";
 import ProductCard from "./ProductCard";
@@ -21,6 +22,12 @@ interface HomepageProps {
 export default function Homepage({ listings, categories, isLoggedIn, userName, recentlyViewed, forYou }: HomepageProps) {
   const [city, setCity] = useState("All India");
   const [isMobile, setIsMobile] = useState(false);
+  const [locale, setLocale] = useState<Locale>("en");
+
+  useEffect(() => {
+    const cookie = document.cookie.split("; ").find((c) => c.startsWith("sa_locale="))?.split("=")[1];
+    setLocale(getLocaleFromCookie(cookie));
+  }, []);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 640);
@@ -43,7 +50,7 @@ export default function Homepage({ listings, categories, isLoggedIn, userName, r
         {recentlyViewed && recentlyViewed.length > 0 && (
           <section className="mb-6">
             <h2 className={`font-bold text-text-primary mb-2 px-1 ${isMobile ? "text-sm" : "text-[15px]"}`}>
-              Recently viewed
+              {t("home.recently_viewed", locale)}
             </h2>
             <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
               {recentlyViewed.map((item) => (
@@ -73,20 +80,20 @@ export default function Homepage({ listings, categories, isLoggedIn, userName, r
 
         <div className="flex items-center justify-between mb-2.5 px-1">
           <h2 className={`font-bold text-text-primary ${isMobile ? "text-sm" : "text-[15px]"}`}>
-            Fresh listings
+            {t("home.fresh", locale)}
             {city !== "All India" && <span className="font-normal text-text-faint"> in {city}</span>}
           </h2>
-          <span className="text-[11px] text-text-faint">{filteredItems.length} items</span>
+          <span className="text-[11px] text-text-faint">{filteredItems.length} {t("home.items", locale)}</span>
         </div>
 
         {filteredItems.length > 0 ? (
           <ProductGrid items={filteredItems} isMobile={isMobile} />
         ) : (
           <div className="text-center py-10 px-4 text-text-faint">
-            <p className="text-sm font-semibold text-text-secondary mb-1">No results found</p>
+            <p className="text-sm font-semibold text-text-secondary mb-1">{t("home.no_results", locale)}</p>
             <p className="text-xs mb-2.5">Try a different city</p>
             <button onClick={() => setCity("All India")} className="px-4 py-1.5 rounded-md border-none bg-text-primary text-white text-[11px] font-semibold cursor-pointer">
-              Show all
+              {t("home.show_all", locale)}
             </button>
           </div>
         )}

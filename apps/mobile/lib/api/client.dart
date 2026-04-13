@@ -36,12 +36,14 @@ class ApiClient {
 
   bool get hasToken => _token != null;
 
-  Map<String, String> _headers({bool json = false}) {
+  Map<String, String> authHeaders({bool json = false}) {
     return {
       if (json) "Content-Type": "application/json",
       if (_token != null) "Authorization": "Bearer $_token",
     };
   }
+
+  Map<String, String> _headers({bool json = false}) => authHeaders(json: json);
 
   Uri _uri(String path, [Map<String, String>? query]) {
     final base = Uri.parse(baseUrl);
