@@ -17,7 +17,7 @@ export default function ShareButton({ title, url }: ShareButtonProps) {
       try {
         await navigator.share({ title, url: fullUrl });
         return;
-      } catch { /* cancelled — fall through */ }
+      } catch {}
     }
 
     try {

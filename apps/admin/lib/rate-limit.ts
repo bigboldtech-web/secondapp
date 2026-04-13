@@ -1,8 +1,3 @@
-// In-process rate limiter. Mirrors apps/web/lib/rate-limit.ts — kept as a
-// copy because apps/admin is a separate Next.js process. The stores don't
-// share state across apps, which is fine: the admin login is low traffic
-// and gated by the allowlist of admin users anyway.
-
 interface Bucket {
   count: number;
   resetAt: number;

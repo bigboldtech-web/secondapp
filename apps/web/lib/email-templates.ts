@@ -1,13 +1,10 @@
-// Thin email templates for transactional flows. No HTML templating library —
-// just tagged template strings. Keeps the bundle tiny and the copy editable.
-
 import { sendEmail } from "./notifications";
 
 export async function emailOrderPlaced(args: {
   buyerEmail: string;
   buyerName: string;
   productName: string;
-  amount: number; // paise
+  amount: number;
   orderId: string;
 }): Promise<void> {
   const price = `₹${Math.round(args.amount / 100).toLocaleString("en-IN")}`;

@@ -15,13 +15,11 @@ export default function ShareStoreButton({ storeSlug, storeName }: ShareStoreBut
       ? `${window.location.origin}/store/${storeSlug}`
       : `/store/${storeSlug}`;
 
-    // Prefer the native share sheet on mobile, fall back to clipboard.
     if (typeof navigator !== "undefined" && "share" in navigator) {
       try {
         await navigator.share({ title: storeName, url });
         return;
       } catch {
-        // user cancelled — fall through to clipboard copy
       }
     }
 

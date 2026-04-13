@@ -63,7 +63,6 @@ export async function cancelOrder(orderId: string) {
     data: { orderStatus: "cancelled", paymentStatus: "refunded" },
   });
 
-  // Return the unit to stock and reactivate the listing.
   await prisma.listing.update({
     where: { id: order.listingId },
     data: { quantity: { increment: 1 }, status: "active" },

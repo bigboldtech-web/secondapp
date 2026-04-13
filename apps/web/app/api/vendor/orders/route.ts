@@ -19,8 +19,6 @@ export async function POST(request: Request) {
   const order = await prisma.order.findUnique({ where: { id: orderId } });
   if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
 
-  // Ownership check — the previous route had NONE, so any logged-in user could
-  // confirm/ship any order on the platform by guessing the id.
   if (order.vendorId !== vendor.id) {
     return NextResponse.json({ error: "Not your order" }, { status: 403 });
   }
@@ -59,7 +57,6 @@ export async function POST(request: Request) {
       },
     });
 
-    // Email the buyer (fire-and-forget)
     const buyer = await prisma.user.findUnique({ where: { id: order.buyerId }, select: { name: true, email: true } });
     const product = await prisma.listing.findUnique({ where: { id: order.listingId }, include: { product: { select: { displayName: true } } } });
     if (buyer?.email) {
@@ -86,7 +83,6 @@ export async function POST(request: Request) {
       where: { id: orderId },
       data: { orderStatus: "cancelled", paymentStatus: "refunded" },
     });
-    // Return the unit to stock and reactivate the listing.
     await prisma.listing.update({
       where: { id: order.listingId },
       data: { quantity: { increment: 1 }, status: "active" },

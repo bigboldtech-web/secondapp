@@ -1,7 +1,3 @@
-// Schema.org JSON-LD generators for Google rich results.
-// These produce the structured data that powers price snippets,
-// star ratings, availability badges, and product carousels in SERPs.
-
 import type { ListingDetail, VendorProfile, ProductDetail } from "./types";
 
 export function listingJsonLd(listing: ListingDetail, url: string): object {

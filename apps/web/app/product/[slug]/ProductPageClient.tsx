@@ -28,11 +28,9 @@ export default function ProductPageClient({ product, children }: ProductPageClie
   const minPrice = Math.min(...prices);
   const maxPrice = Math.max(...prices);
 
-  // Get unique values for filters
   const conditions = [...new Set(product.listings.map((l) => l.condition))];
   const cities = [...new Set(product.listings.map((l) => l.location))];
 
-  // Get unique spec keys and their values
   const specKeys = new Map<string, Set<string>>();
   product.listings.forEach((l) => {
     Object.entries(l.specs).forEach(([key, val]) => {
@@ -52,14 +50,12 @@ export default function ProductPageClient({ product, children }: ProductPageClie
       result = result.filter((l) => l.location === cityFilter);
     }
 
-    // Apply spec filters
     Object.entries(specFilters).forEach(([key, val]) => {
       if (val !== "all") {
         result = result.filter((l) => l.specs[key] === val);
       }
     });
 
-    // Sort
     switch (sortBy) {
       case "price-low":
         result.sort((a, b) => a.price - b.price);

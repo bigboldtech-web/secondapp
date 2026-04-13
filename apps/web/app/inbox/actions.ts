@@ -49,7 +49,6 @@ export async function getChatMessages(chatId: string) {
 
   if (!chat) return { messages: [], chatInfo: null };
 
-  // Mark messages as read
   await prisma.message.updateMany({
     where: { chatId, senderId: { not: session.userId }, isRead: false },
     data: { isRead: true },
@@ -97,7 +96,6 @@ export async function startChat(listingId: string) {
   });
   if (!listing) return { error: "Listing not found" };
 
-  // Check existing chat
   const existing = await prisma.chat.findFirst({
     where: { listingId, buyerId: session.userId },
   });
@@ -108,7 +106,6 @@ export async function startChat(listingId: string) {
     data: { listingId, buyerId: session.userId, vendorId: listing.vendorId },
   });
 
-  // First inquiry on this listing from this buyer — bump the counter.
   void prisma.listing.update({
     where: { id: listingId },
     data: { inquiryCount: { increment: 1 } },

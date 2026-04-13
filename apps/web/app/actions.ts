@@ -4,10 +4,6 @@ import { prisma } from "@second-app/database";
 import { revalidatePath } from "next/cache";
 import { getSession } from "@/lib/auth";
 
-// ============================================================
-// DEAL ALERTS
-// ============================================================
-
 export async function createAlert(data: {
   productSlug: string;
   maxPrice?: number;
@@ -79,10 +75,6 @@ export async function getMyAlerts() {
     createdAt: a.createdAt.toISOString(),
   }));
 }
-
-// ============================================================
-// SAVED / WISHLIST (using Collections)
-// ============================================================
 
 export async function toggleSaveListing(listingId: string) {
   const session = await getSession();
@@ -166,13 +158,6 @@ export async function getMySavedListings() {
     });
 }
 
-// ============================================================
-// VENDOR LISTING MANAGEMENT
-// ============================================================
-
-// Every mutation below runs through requireOwnedListing() so a vendor can
-// only act on their own inventory. Previously these were open by listingId
-// — anyone logged in could pause or delete any listing on the platform.
 type OwnedListingResult =
   | { ok: false; error: string }
   | { ok: true; vendor: { id: string }; listingId: string };
@@ -220,7 +205,7 @@ export async function deleteListing(listingId: string) {
 }
 
 interface UpdateListingInput {
-  price: number;              // rupees
+  price: number;
   originalPrice: number | null;
   quantity: number;
   condition: string;

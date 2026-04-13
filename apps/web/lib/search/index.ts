@@ -25,34 +25,25 @@ export interface SearchResolution {
 }
 
 const SUGGEST_LIMIT = 10;
-const FUZZY_CAP = 2; // max edit distance tolerated
+const FUZZY_CAP = 2;
 
-// ---------------------------------------------------------------------------
-// suggest(q, categoryId?) — OLX-style 3-layer autosuggest pipeline.
-//   Layer 1: exact prefix match on term
-//   Layer 2: edit-distance <= FUZZY_CAP against same-prefix candidates
-//   Layer 3: phonetic bucket match via Double Metaphone
-// Results are ranked by OLX composite score (freq + 2*views + recency).
-// ---------------------------------------------------------------------------
 export async function suggest(rawQ: string, categoryId?: string | null): Promise<SuggestionResult[]> {
   const q = normalize(rawQ);
   if (q.length < 2) return [];
 
   const categoryFilter = categoryId ? { OR: [{ categoryId }, { categoryId: null }] } : {};
 
-  // ---- Layer 1: exact prefix ----
   const exact = await prisma.searchTerm.findMany({
     where: {
       term: { startsWith: q },
       ...categoryFilter,
     },
-    take: SUGGEST_LIMIT * 3, // over-fetch so scoring can pick the best
+    take: SUGGEST_LIMIT * 3,
   });
 
   const results = new Map<string, SuggestionResult>();
   for (const t of exact) results.set(t.id, toResult(t));
 
-  // ---- Layer 2: fuzzy (edit distance <= FUZZY_CAP) ----
   if (results.size < SUGGEST_LIMIT) {
     const firstChar = q[0];
     const candidates = await prisma.searchTerm.findMany({
@@ -69,7 +60,6 @@ export async function suggest(rawQ: string, categoryId?: string | null): Promise
     }
   }
 
-  // ---- Layer 3: phonetic bucket ----
   if (results.size < SUGGEST_LIMIT) {
     const code = doubleMetaphone(q.replace(/\s+/g, ""));
     if (code.length >= 2) {
@@ -92,17 +82,10 @@ export async function suggest(rawQ: string, categoryId?: string | null): Promise
     .slice(0, SUGGEST_LIMIT);
 }
 
-// ---------------------------------------------------------------------------
-// resolveQuery(q, categoryId?) — picks the single best canonical term for a
-// search query. Used by the search page to (a) optionally redirect straight
-// to a product/category page, (b) spell-correct the query before we hit the
-// listings table.
-// ---------------------------------------------------------------------------
 export async function resolveQuery(rawQ: string, categoryId?: string | null): Promise<SearchResolution> {
   const q = normalize(rawQ);
   if (!q) return { original: rawQ, corrected: null, redirectPath: null, matchedTermId: null };
 
-  // Exact match first
   const exact = await prisma.searchTerm.findFirst({
     where: {
       term: q,
@@ -120,7 +103,6 @@ export async function resolveQuery(rawQ: string, categoryId?: string | null): Pr
     };
   }
 
-  // Fuzzy fallback via suggest()
   const [top] = await suggest(rawQ, categoryId);
   if (!top) return { original: rawQ, corrected: null, redirectPath: null, matchedTermId: null };
 
@@ -132,9 +114,6 @@ export async function resolveQuery(rawQ: string, categoryId?: string | null): Pr
   };
 }
 
-// ---------------------------------------------------------------------------
-// logQuery — fire-and-forget. Feeds the vocabulary builder on each rebuild.
-// ---------------------------------------------------------------------------
 export async function logQuery(args: {
   query: string;
   userId?: string | null;
@@ -152,14 +131,9 @@ export async function logQuery(args: {
       },
     });
   } catch {
-    // swallow — search must never fail because logging failed
   }
 }
 
-// ---------------------------------------------------------------------------
-// recordHit — called when a user actually clicks a suggestion. Bumps the
-// term's search frequency + last-searched timestamp so it climbs the ranking.
-// ---------------------------------------------------------------------------
 export async function recordHit(termId: string): Promise<void> {
   try {
     await prisma.searchTerm.update({
@@ -170,16 +144,9 @@ export async function recordHit(termId: string): Promise<void> {
       },
     });
   } catch {
-    /* swallow */
   }
 }
 
-// ---------------------------------------------------------------------------
-// recordClick — called when a user clicks a *listing* from a search/suggest.
-// Bumps the term's viewCount (stronger signal than a typed query) and the
-// TermCategoryClick stat for the listing's category, so the category
-// learner can promote a dominant category over time.
-// ---------------------------------------------------------------------------
 export async function recordClick(args: { termId?: string | null; listingId: string; queryLogId?: string | null }): Promise<void> {
   try {
     if (args.termId) {
@@ -188,7 +155,6 @@ export async function recordClick(args: { termId?: string | null; listingId: str
         data: { viewCount: { increment: 1 } },
       });
 
-      // learn which category this term's clicks cluster around
       const listing = await prisma.listing.findUnique({
         where: { id: args.listingId },
         select: { product: { select: { categoryId: true } } },
@@ -209,15 +175,9 @@ export async function recordClick(args: { termId?: string | null; listingId: str
       });
     }
   } catch {
-    /* swallow */
   }
 }
 
-// ---------------------------------------------------------------------------
-// getDominantCategory — returns the categoryId a term's clicks cluster in,
-// but only if one category has >= 70% of the total (OLX's threshold).
-// A minimum sample floor prevents a single click from deciding the category.
-// ---------------------------------------------------------------------------
 const DOMINANT_THRESHOLD = 0.7;
 const MIN_SAMPLES = 5;
 
@@ -235,7 +195,6 @@ export async function getDominantCategory(termId: string): Promise<string | null
   return winner.count / total >= DOMINANT_THRESHOLD ? winner.categoryId : null;
 }
 
-// ---------------------------------------------------------------------------
 function toResult(t: {
   id: string;
   term: string;
@@ -262,7 +221,5 @@ function toResult(t: {
   };
 }
 
-// Re-export algorithms for downstream (vocab builder etc).
 export * from "./algorithms";
-// Keep SearchQueryLog reference for future usage.
 export const _tokenize = tokenize;

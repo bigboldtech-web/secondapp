@@ -11,7 +11,6 @@ export default async function ProfilePage() {
 
   const user = session.user;
 
-  // Get counts
   const [orderCount, savedCount, alertCount, vendor] = await Promise.all([
     prisma.order.count({ where: { buyerId: user.id } }),
     prisma.collectionItem.count({

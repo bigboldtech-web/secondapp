@@ -9,18 +9,15 @@ type Step = "account" | "store" | "kyc" | "done";
 export default function VendorRegisterPage() {
   const [step, setStep] = useState<Step>("account");
 
-  // Account
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
 
-  // Store
   const [storeName, setStoreName] = useState("");
   const [storeCity, setStoreCity] = useState("");
   const [storeBio, setStoreBio] = useState("");
   const [storeCategories, setStoreCategories] = useState<string[]>([]);
 
-  // KYC
   const [kycType, setKycType] = useState<"aadhaar" | "pan" | "gst">("aadhaar");
 
   const cities = ["Mumbai", "Delhi", "Bangalore", "Hyderabad", "Chennai", "Pune", "Kolkata"];

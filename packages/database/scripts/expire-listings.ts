@@ -1,8 +1,3 @@
-// Auto-expire active listings older than 60 days and demote expired boosts.
-// Run daily via cron: tsx packages/database/scripts/expire-listings.ts
-//
-// Vendors can reactivate from the manage page if they still have stock.
-
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -13,7 +8,6 @@ async function main() {
 
   const cutoff = new Date(Date.now() - EXPIRY_DAYS * 24 * 60 * 60 * 1000);
 
-  // 1. Expire old active listings
   const expired = await prisma.listing.updateMany({
     where: {
       status: "active",
@@ -23,7 +17,6 @@ async function main() {
   });
   console.log(`  expired ${expired.count} listing(s) older than ${EXPIRY_DAYS} days`);
 
-  // 2. Demote boost flag on listings whose promotedUntil has passed
   const boosted = await prisma.listing.updateMany({
     where: {
       isPromoted: true,
@@ -33,7 +26,6 @@ async function main() {
   });
   console.log(`  demoted ${boosted.count} expired boost(s)`);
 
-  // 3. Notify vendors whose listings expired (batch — collect unique vendorIds)
   if (expired.count > 0) {
     const expiredListings = await prisma.listing.findMany({
       where: { status: "expired", createdAt: { lt: cutoff } },

@@ -21,8 +21,6 @@ export async function GET(req: Request) {
     offset,
   };
 
-  // Route free-text searches through the FTS pipeline; filter-only browsing
-  // still hits the index-backed getListings() path.
   const listings = search && search.trim().length >= 2
     ? await searchListings(search, filters)
     : await getListings(filters);

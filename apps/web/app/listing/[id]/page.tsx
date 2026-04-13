@@ -37,13 +37,11 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
 
   if (!listing) notFound();
 
-  // Fire-and-forget: view count + recently-viewed tracking.
   void prisma.listing.update({
     where: { id },
     data: { viewCount: { increment: 1 } },
   }).catch(() => {});
 
-  // Track recently viewed for logged-in users (upsert so re-visits just bump viewedAt).
   void (async () => {
     try {
       const { getSession } = await import("@/lib/auth");
@@ -54,7 +52,6 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
           create: { userId: session.userId, listingId: id },
           update: { viewedAt: new Date() },
         });
-        // Cap at 30 entries per user
         const old = await prisma.recentlyViewed.findMany({
           where: { userId: session.userId },
           orderBy: { viewedAt: "desc" },
@@ -67,7 +64,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
           });
         }
       }
-    } catch { /* never block render */ }
+    } catch {}
   })();
 
   const [similar, { reactions, comments }] = await Promise.all([

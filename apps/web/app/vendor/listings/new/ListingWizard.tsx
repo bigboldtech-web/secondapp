@@ -59,7 +59,6 @@ export default function ListingWizard({ catalog }: ListingWizardProps) {
   const [submitError, setSubmitError] = useState("");
   const [priceSuggestion, setPriceSuggestion] = useState<{ min: number; max: number; avg: number; count: number; sameCondition: boolean } | null>(null);
 
-  // Fetch price suggestion when entering price step
   useEffect(() => {
     if (step === "price" && modelId && condition) {
       getPriceSuggestion(modelId, condition).then((s) => setPriceSuggestion(s));
@@ -81,7 +80,7 @@ export default function ListingWizard({ catalog }: ListingWizardProps) {
       case "condition": return !!condition;
       case "photos": return photos.length >= 3 && !uploading;
       case "price": return !!price && parseInt(price) > 0;
-      case "description": return true; // optional
+      case "description": return true;
       default: return true;
     }
   };

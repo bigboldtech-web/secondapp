@@ -1,7 +1,3 @@
-// ============================================================
-// Category types
-// ============================================================
-
 export type CategorySlug =
   | "phones"
   | "laptops"
@@ -22,14 +18,10 @@ export interface CategoryWithCount {
   listingCount: number;
 }
 
-// ============================================================
-// Listing card data (used on homepage, grids, etc.)
-// ============================================================
-
 export interface ListingCardData {
   id: string;
-  title: string;         // Product display name + key specs
-  price: number;         // in paise
+  title: string;
+  price: number;
   originalPrice: number | null;
   condition: string;
   specs: Record<string, string>;
@@ -44,10 +36,6 @@ export interface ListingCardData {
   isFeatured: boolean;
   adminCertified: boolean;
 }
-
-// ============================================================
-// Product detail (for grouping page)
-// ============================================================
 
 export interface ProductDetail {
   id: string;
@@ -80,10 +68,6 @@ export interface ProductListingData {
   adminCertified: boolean;
   viewCount: number;
 }
-
-// ============================================================
-// Listing detail (for individual listing page)
-// ============================================================
 
 export interface ListingDetail {
   id: string;
@@ -121,10 +105,6 @@ export interface ListingDetail {
   };
 }
 
-// ============================================================
-// Vendor profile (for store page)
-// ============================================================
-
 export interface VendorProfile {
   id: string;
   storeName: string;
@@ -147,8 +127,6 @@ export interface VendorProfile {
   reviews: VendorReview[];
 }
 
-// Richer than ListingCardData: also carries videoUrl + photo count so the
-// store page can render a dedicated Videos rail alongside the listings grid.
 export interface StoreListing extends ListingCardData {
   videoUrl: string | null;
   photoCount: number;
@@ -161,10 +139,6 @@ export interface VendorReview {
   buyerName: string;
   createdAt: Date;
 }
-
-// ============================================================
-// SVG icons for categories (kept from original for UI)
-// ============================================================
 
 export const CATEGORY_ICONS: Record<string, string> = {
   phones: "M15.5 1h-8A2.5 2.5 0 005 3.5v17A2.5 2.5 0 007.5 23h8a2.5 2.5 0 002.5-2.5v-17A2.5 2.5 0 0015.5 1zm-4 21a1 1 0 110-2 1 1 0 010 2zm4.5-4H7V4h9v14z",

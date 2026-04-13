@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from "crypto";
 
 export interface PaymentOrderInput {
-  amount: number; // paise
+  amount: number;
   currency?: string;
   receipt: string;
   notes?: Record<string, string>;
@@ -77,7 +77,6 @@ export async function createPaymentOrder(input: PaymentOrderInput): Promise<Paym
 
 export function verifyPaymentSignature(input: PaymentVerification): boolean {
   if (!hasRazorpayCreds()) {
-    // Mock mode: accept any signature that begins with "mock_" so dev checkout works.
     return input.signature.startsWith("mock_");
   }
 

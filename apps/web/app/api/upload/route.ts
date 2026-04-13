@@ -36,7 +36,6 @@ const KIND_SPECS: Record<UploadKind, KindSpec> = {
 
 function resolveKind(raw: FormDataEntryValue | null, contentType: string): UploadKind {
   if (typeof raw === "string" && raw in KIND_SPECS) return raw as UploadKind;
-  // Back-compat: older clients don't send `kind`. Infer from content type.
   return contentType.startsWith("video/") ? "listing-video" : "listing-photo";
 }
 
@@ -66,8 +65,6 @@ export async function POST(req: Request) {
 
   const rawBuffer = Buffer.from(await file.arrayBuffer());
 
-  // Optimize images (resize to 1200px max width + convert to WebP) when
-  // sharp is available. Falls through to the original buffer otherwise.
   const { optimizeImage } = await import("@/lib/image-optimize");
   const { buffer, contentType, optimized } = await optimizeImage(rawBuffer, file.type);
 

@@ -30,7 +30,7 @@ export default function PriceHistory({ history, currentAvg }: PriceHistoryProps)
 
       <div className="flex items-end gap-1 h-20">
         {history.map((point, i) => {
-          const height = ((point.avgPrice - minPrice) / range) * 60 + 10; // 10-70px
+          const height = ((point.avgPrice - minPrice) / range) * 60 + 10;
           return (
             <div key={i} className="flex-1 flex flex-col items-center gap-1">
               <div

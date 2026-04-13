@@ -5,7 +5,7 @@ import { getSession } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
 interface PlanConfig {
-  price: number;    // monthly, in rupees
+  price: number;
   maxListings: number;
   label: string;
 }
@@ -35,8 +35,6 @@ export async function upgradePlan(plan: string) {
     return { success: true };
   }
 
-  // For MVP, subscriptions activate instantly without payment.
-  // Production: create a Razorpay subscription or recurring order.
   const endsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
   await prisma.vendor.update({

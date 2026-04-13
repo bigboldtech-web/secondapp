@@ -24,7 +24,6 @@ export async function getOrCreateReferralCode() {
     return { code: user.referralCode, credits: user.credits };
   }
 
-  // Generate a unique code
   let code = generateCode();
   let attempts = 0;
   while (attempts < 10) {
@@ -49,13 +48,11 @@ export async function applyReferralCode(code: string) {
   const trimmed = code.trim().toUpperCase();
   if (!trimmed) return { error: "Enter a referral code" };
 
-  // Check if user already used a referral
   const existing = await prisma.referral.findUnique({
     where: { referredId: session.userId },
   });
   if (existing) return { error: "You already used a referral code" };
 
-  // Find the referrer
   const referrer = await prisma.user.findUnique({
     where: { referralCode: trimmed },
     select: { id: true },
@@ -63,9 +60,8 @@ export async function applyReferralCode(code: string) {
   if (!referrer) return { error: "Invalid referral code" };
   if (referrer.id === session.userId) return { error: "You can't refer yourself" };
 
-  const creditAmount = 10000; // ₹100
+  const creditAmount = 10000;
 
-  // Create referral + credit both users
   await prisma.referral.create({
     data: {
       referrerId: referrer.id,

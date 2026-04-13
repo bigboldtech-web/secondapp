@@ -32,7 +32,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   if (!product) notFound();
 
-  // Build a price history — group ALL listings (including sold) by month.
   const allListings = await prisma.listing.findMany({
     where: { product: { slug } },
     select: { price: true, createdAt: true },

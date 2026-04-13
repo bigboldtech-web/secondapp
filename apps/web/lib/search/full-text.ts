@@ -1,25 +1,3 @@
-// Free-text search library. Ports the OLX ElasticSearch approach to
-// Postgres' built-in FTS + trigram extensions. See packages/database/scripts/
-// setup-fts.sql for the index bootstrap.
-//
-// Query pipeline — mirrors the OLX analyzer chain:
-//   1. normalize input (lowercase + unaccent) — done in SQL via unaccent()
-//   2. tokenize + stem via websearch_to_tsquery('english', q)
-//   3. run two parallel matchers, union their scores:
-//        a. tsvector @@ tsquery       (Porter-stemmed, stop-word filtered)
-//        b. similarity(searchText, q) (trigram fuzzy for typos / partials)
-//   4. multiply by business signals:
-//        - admin certification (+0.3)
-//        - featured flag (+0.2)
-//        - freshness (exponential decay, 30-day half-life)
-//        - vendor rating (±, centered on 3.5)
-//        - vendor certification tier (trusted/premium +0.15)
-//   5. apply filters (category, city, condition, price range)
-//
-// Synonym expansion is applied client-side by the suggest() helper. The
-// SearchTerm vocabulary already captures the common misspellings per brand
-// so we don't need a second OLX-style synonym_en filter on the Postgres side.
-
 import { prisma } from "@second-app/database";
 import { Prisma } from "@prisma/client";
 import type { ListingCardData } from "../types";
@@ -56,7 +34,7 @@ interface Row {
   score: number;
 }
 
-const TRIGRAM_THRESHOLD = 0.25; // similarity() >= this qualifies as a match
+const TRIGRAM_THRESHOLD = 0.25;
 const DEFAULT_LIMIT = 50;
 
 export async function fullTextSearch(
@@ -69,8 +47,6 @@ export async function fullTextSearch(
   const limit = Math.min(filters.limit ?? DEFAULT_LIMIT, 100);
   const offset = Math.max(filters.offset ?? 0, 0);
 
-  // Filter fragments are built conditionally so untouched filters don't
-  // drag empty WHERE clauses into the query. Prisma.sql handles the join.
   const clauses: Prisma.Sql[] = [Prisma.sql`l."status" = 'active'`];
 
   if (filters.categorySlug) {
@@ -91,14 +67,6 @@ export async function fullTextSearch(
 
   const where = Prisma.sql`WHERE ${Prisma.join(clauses, " AND ")}`;
 
-  // Core relevance:
-  //   ts_rank_cd covers the Porter-stemmed + weighted field match.
-  //   similarity() covers trigram fuzzy — rescues typos that lose to Porter.
-  //   exp(-age_days / 30) is OLX's freshness decay approximated for a year.
-  //
-  // We keep the text condition as an OR (match OR trigram) so fuzzy-only
-  // hits still appear, but gate them on TRIGRAM_THRESHOLD so random noise
-  // stays out of the result set.
   const rows = await prisma.$queryRaw<Row[]>`
     SELECT
       l."id"                                             AS "id",
@@ -165,10 +133,6 @@ export async function fullTextSearch(
   }));
 }
 
-// Zero-result recovery: if the strict query returns nothing, retry without
-// the narrow filters (condition / price) to see whether the buyer would
-// accept a broader match. Called by the search page when fullTextSearch()
-// returns zero rows.
 export async function fullTextSearchBroad(
   rawQuery: string,
   filters: FullTextSearchFilters = {}

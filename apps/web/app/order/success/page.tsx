@@ -6,7 +6,6 @@ export default async function OrderSuccessPage({ searchParams }: { searchParams:
 
   let orderDisplay = orderId || `SA${Date.now().toString().slice(-8)}`;
 
-  // Try to get real order
   if (orderId) {
     const order = await prisma.order.findUnique({
       where: { id: orderId },

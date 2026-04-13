@@ -1,15 +1,8 @@
-/**
- * Format price from paise to Indian rupee display string
- * e.g. 8999900 → "₹89,999" and 142000000 → "₹14,20,000"
- */
 export function formatPrice(paise: number): string {
   const rupees = Math.round(paise / 100);
   return "₹" + rupees.toLocaleString("en-IN");
 }
 
-/**
- * Format a date into a human-readable "time ago" string
- */
 export function formatTimeAgo(date: Date): string {
   const now = Date.now();
   const diff = now - date.getTime();
@@ -25,9 +18,6 @@ export function formatTimeAgo(date: Date): string {
   return `${Math.floor(days / 30)}mo`;
 }
 
-/**
- * Parse JSON specs string into a typed object
- */
 export function parseSpecs(specsJson: string | null): Record<string, string> {
   if (!specsJson) return {};
   try {
@@ -47,9 +37,6 @@ export function parsePhotos(photosJson: string | null): string[] {
   }
 }
 
-/**
- * Calculate discount percentage
- */
 export function calcDiscount(price: number, originalPrice: number | null): number | null {
   if (!originalPrice || originalPrice <= price) return null;
   return Math.round(((originalPrice - price) / originalPrice) * 100);

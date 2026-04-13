@@ -17,10 +17,8 @@ function generateQuestions(props: SuggestedQuestionsProps): string[] {
   const { categorySlug, condition, specs, productName } = props;
   const questions: string[] = [];
 
-  // Universal
   questions.push(`Is the ${productName} still available?`);
 
-  // Condition-specific
   if (condition === "Good" || condition === "Rough") {
     questions.push("Can you share more photos of any scratches or damage?");
   }
@@ -28,7 +26,6 @@ function generateQuestions(props: SuggestedQuestionsProps): string[] {
     questions.push("How old is this device and how much was it used?");
   }
 
-  // Category-specific
   if (categorySlug === "phones" || categorySlug === "tablets") {
     questions.push("What is the battery health percentage?");
     questions.push("Does it come with original charger and box?");
@@ -54,11 +51,9 @@ function generateQuestions(props: SuggestedQuestionsProps): string[] {
     questions.push("Does it come with any games or controllers?");
   }
 
-  // Pricing
   questions.push("Is the price negotiable?");
   questions.push("Can you do a video call to show the product?");
 
-  // Deduplicate and limit
   return [...new Set(questions)].slice(0, 6);
 }
 

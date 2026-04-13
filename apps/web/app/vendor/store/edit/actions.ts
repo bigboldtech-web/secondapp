@@ -26,8 +26,6 @@ export async function updateStore(input: UpdateStoreInput) {
   const bio = input.bio?.trim() ?? null;
   if (bio && bio.length > 500) return { error: "Bio must be under 500 characters" };
 
-  // We keep the existing storeSlug even if the name changes — slugs are the
-  // public URL and must stay stable. Admins can rewrite them on request.
   const updated = await prisma.vendor.update({
     where: { id: vendor.id },
     data: {

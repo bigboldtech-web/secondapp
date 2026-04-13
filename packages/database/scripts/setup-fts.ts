@@ -1,12 +1,3 @@
-// Runs the SQL in setup-fts.sql against DATABASE_URL. Idempotent — re-run
-// after every deploy to pick up trigger/function body edits.
-//
-//   tsx packages/database/scripts/setup-fts.ts
-//
-// Prisma's $executeRawUnsafe only runs one statement at a time, so we parse
-// the .sql file into individual statements with a small state machine that
-// respects dollar-quoted function bodies ($$ ... $$).
-
 import { readFileSync } from "fs";
 import path from "path";
 import { PrismaClient } from "@prisma/client";
@@ -23,7 +14,6 @@ function splitSqlStatements(sql: string): string[] {
     const c = sql[i];
     const next = sql[i + 1];
 
-    // Line comments skip to the end of the line.
     if (!inDollar && !inLineComment && c === "-" && next === "-") {
       inLineComment = true;
       buffer += c;
@@ -35,7 +25,6 @@ function splitSqlStatements(sql: string): string[] {
       continue;
     }
 
-    // Toggle dollar-quoted blocks on every $$ pair.
     if (c === "$" && next === "$") {
       inDollar = !inDollar;
       buffer += "$$";

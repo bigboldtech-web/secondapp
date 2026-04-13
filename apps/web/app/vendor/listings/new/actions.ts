@@ -10,7 +10,7 @@ interface CreateListingInput {
   modelId: string;
   specs: Record<string, string>;
   condition: string;
-  price: number; // in rupees
+  price: number;
   originalPrice?: number;
   quantity?: number;
   description?: string;
@@ -25,7 +25,6 @@ export async function createListing(input: CreateListingInput) {
   const vendor = await prisma.vendor.findUnique({ where: { userId: session.userId } });
   if (!vendor) return { error: "You must register as a vendor before posting listings" };
 
-  // Enforce subscription listing cap.
   const activeCount = await prisma.listing.count({
     where: { vendorId: vendor.id, status: { in: ["active", "pending"] } },
   });
@@ -66,7 +65,6 @@ export async function createListing(input: CreateListingInput) {
     });
   }
 
-  // Trusted and premium vendors skip moderation.
   const autoApprove = vendor.certificationLevel === "trusted" || vendor.certificationLevel === "premium";
 
   const qty = Math.max(1, Math.min(input.quantity ?? 1, 999));

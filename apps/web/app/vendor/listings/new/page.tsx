@@ -2,7 +2,6 @@ import { prisma } from "@second-app/database";
 import ListingWizard from "./ListingWizard";
 
 export default async function NewListingPage() {
-  // Fetch categories with their brands
   const categories = await prisma.category.findMany({
     where: { isActive: true },
     orderBy: { sortOrder: "asc" },
@@ -29,7 +28,6 @@ export default async function NewListingPage() {
     },
   });
 
-  // Serialize for client
   const catalogData = categories.map((cat) => ({
     id: cat.id,
     name: cat.name,

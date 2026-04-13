@@ -1,13 +1,3 @@
-// Pure-TS search primitives. OLX-inspired, zero external deps.
-//
-//   normalize(s)       lowercase + strip punctuation + collapse whitespace
-//   tokenize(s)        split on whitespace after normalize
-//   levenshtein(a, b)  classic edit distance with early-exit cap
-//   doubleMetaphone(s) phonetic key (primary code only, good enough here)
-//   recencyBoost       OLX formula: weight / (1 + log(days_since))
-//   scoreTerm          OLX composite: freq + views + recency
-//   generateNgrams     "iphone 15 pro" -> ["iphone","iphone 15","iphone 15 pro",...]
-
 export function normalize(input: string): string {
   return input
     .toLowerCase()
@@ -21,8 +11,6 @@ export function tokenize(input: string): string[] {
   return n ? n.split(" ") : [];
 }
 
-// Levenshtein with an early-exit cap. If the cheapest edit distance already
-// exceeds `cap`, returns cap + 1 so callers can drop the candidate fast.
 export function levenshtein(a: string, b: string, cap = 3): number {
   if (a === b) return 0;
   if (Math.abs(a.length - b.length) > cap) return cap + 1;
@@ -51,10 +39,6 @@ export function levenshtein(a: string, b: string, cap = 3): number {
   return prev[b.length];
 }
 
-// Double Metaphone — simplified primary-code implementation. Not as faithful
-// as Lawrence Philips' original C++ 400-line version, but it captures the
-// common English + Indian-name cases we care about (phone/fone, x/ks, etc.)
-// and is stable enough for a vocabulary-bucket key.
 export function doubleMetaphone(word: string): string {
   const w = word.toLowerCase().replace(/[^a-z]/g, "");
   if (!w) return "";
@@ -67,7 +51,6 @@ export function doubleMetaphone(word: string): string {
     pos >= 0 && pos + s.length <= n && w.substring(pos, pos + s.length) === s;
   const vowel = (c: string) => /[aeiouy]/.test(c);
 
-  // Strip silent leading pairs
   if (at(0, "kn") || at(0, "gn") || at(0, "pn") || at(0, "wr") || at(0, "ps")) i = 1;
   if (at(0, "x")) { out += "s"; i = 1; }
 
@@ -186,8 +169,6 @@ export function doubleMetaphone(word: string): string {
   return out.slice(0, 8);
 }
 
-// OLX recency boost: weight / (1 + log(days_since_last_search)).
-// days=0 gives the full weight, days=9 gives ~weight/3.2, days=365 gives ~weight/6.9.
 export function recencyBoost(lastSearchedAt: Date | null, weight = 10): number {
   if (!lastSearchedAt) return 0;
   const days = (Date.now() - lastSearchedAt.getTime()) / (1000 * 60 * 60 * 24);
@@ -200,15 +181,10 @@ export interface ScoreInputs {
   lastSearchedAt: Date | null;
 }
 
-// OLX composite: score = search_frequency + view_count + recency_boost.
-// Views get a 2x bump because a click is a stronger signal than a typed query.
 export function scoreTerm({ searchFrequency, viewCount, lastSearchedAt }: ScoreInputs): number {
   return searchFrequency + viewCount * 2 + recencyBoost(lastSearchedAt);
 }
 
-// Generate progressive n-grams for catalog phrases so a user typing the first
-// word still gets the full suggestion: "iphone 15 pro max" ->
-// ["iphone","iphone 15","iphone 15 pro","iphone 15 pro max"].
 export function generateNgrams(phrase: string): string[] {
   const tokens = tokenize(phrase);
   const out: string[] = [];

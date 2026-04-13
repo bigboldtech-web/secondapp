@@ -41,11 +41,6 @@ export async function uploadFile(input: UploadInput): Promise<UploadResult> {
   return { url: `/uploads/${key}`, key, provider: "local" };
 }
 
-// ----------------------------------------------------------------------------
-// S3 PUT using SigV4 (no external SDK so build stays dependency-free).
-// Works with AWS S3 and Cloudflare R2 (R2 exposes an S3-compatible API).
-// ----------------------------------------------------------------------------
-
 async function uploadToS3(input: UploadInput, key: string): Promise<UploadResult> {
   const bucket = process.env.S3_BUCKET!;
   const region = process.env.S3_REGION || "auto";

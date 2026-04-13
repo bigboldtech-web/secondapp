@@ -13,7 +13,6 @@ export default async function Home() {
     getSession(),
   ]);
 
-  // Fetch recently viewed for logged-in users (last 10, active only).
   let recentlyViewed: ListingCardData[] = [];
   if (session) {
     try {
@@ -53,10 +52,9 @@ export default async function Home() {
             adminCertified: l.adminCertified,
           };
         });
-    } catch { /* silently skip if table doesn't exist yet */ }
+    } catch {}
   }
 
-  // Personalized "For you" — collaborative filtering on recently-viewed overlap.
   let forYou: ListingCardData[] = [];
   if (session) {
     try {
@@ -88,7 +86,7 @@ export default async function Home() {
           adminCertified: l.adminCertified,
         }));
       }
-    } catch { /* silently skip */ }
+    } catch {}
   }
 
   return (

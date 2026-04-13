@@ -96,7 +96,7 @@ export async function getMyCollections() {
           const p = JSON.parse(item.listing.photos);
           if (Array.isArray(p) && p.length > 0) thumb = p[0];
         }
-      } catch { /* */ }
+      } catch {}
       return { title: item.listing.product.displayName, thumbnail: thumb };
     }),
   }));

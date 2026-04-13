@@ -44,7 +44,7 @@ export default function CheckoutClient({ listing }: CheckoutClientProps) {
   const maxQty = listing.quantity ?? 1;
   const lineTotal = listing.price * qty;
   const discount = calcDiscount(listing.price, listing.originalPrice);
-  const deliveryFee = lineTotal > 50000 * 100 ? 0 : 9900; // Free above ₹50,000, else ₹99
+  const deliveryFee = lineTotal > 50000 * 100 ? 0 : 9900;
   const total = lineTotal + deliveryFee;
 
   const addressValid = name.trim() && phone.length === 10 && address.trim() && city.trim() && pincode.length === 6;

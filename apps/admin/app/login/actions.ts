@@ -14,9 +14,6 @@ async function callerIp(): Promise<string> {
   );
 }
 
-// Admin login shares the same SMS gateway and OTP generator as the web app.
-// We import from apps/web via a relative path so provider env is resolved
-// the same way in both Next.js processes.
 async function generateOtp(): Promise<string> {
   if (process.env.DEV_OTP) return process.env.DEV_OTP;
   return String(Math.floor(100000 + Math.random() * 900000));

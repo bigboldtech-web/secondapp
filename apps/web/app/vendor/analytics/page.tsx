@@ -37,12 +37,10 @@ export default async function VendorAnalyticsPage() {
   const soldListings = listings.filter((l) => l.status === "sold").length;
   const conversionRate = totalViews > 0 ? ((orders.length / totalViews) * 100).toFixed(1) : "0";
 
-  // Top performing listings
   const topListings = [...listings]
     .sort((a, b) => b.viewCount - a.viewCount)
     .slice(0, 5);
 
-  // Rating distribution
   const ratingDist = [5, 4, 3, 2, 1].map((r) => ({
     stars: r,
     count: reviews.filter((rev) => rev.rating === r).length,

@@ -19,17 +19,15 @@ async function callerIp(): Promise<string> {
 export async function sendOtp(phone: string) {
   if (phone.length !== 10) return { error: "Invalid phone number" };
 
-  // Rate limit BEFORE hitting the DB or SMS gateway so abuse can't cost us.
   const ip = await callerIp();
   const limit = rateLimitAll([
-    { name: "otp:phone", key: phone, max: 3, windowMs: 10 * 60 * 1000 },   // 3 per phone per 10 min
-    { name: "otp:ip", key: ip, max: 15, windowMs: 60 * 60 * 1000 },        // 15 per IP per hour
+    { name: "otp:phone", key: phone, max: 3, windowMs: 10 * 60 * 1000 },
+    { name: "otp:ip", key: ip, max: 15, windowMs: 60 * 60 * 1000 },
   ]);
   if (!limit.ok) {
     return { error: `Too many attempts. Try again in ${Math.ceil(limit.resetInSeconds / 60)} min.` };
   }
 
-  // Delete any existing OTPs for this phone so only the latest code works.
   await prisma.otpVerification.deleteMany({ where: { phone } });
 
   const code = generateOtp();
@@ -38,7 +36,7 @@ export async function sendOtp(phone: string) {
     data: {
       phone,
       code,
-      expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 min expiry
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
     },
   });
 
@@ -48,8 +46,6 @@ export async function sendOtp(phone: string) {
   });
 
   if (!delivery.ok) {
-    // Log-only: the OTP is still written to the DB so a manual SMS re-send
-    // or support flow can read it. We surface a user-facing error.
     return { error: "Couldn't send SMS right now — please try again in a moment" };
   }
 
@@ -61,7 +57,6 @@ export async function sendOtp(phone: string) {
 }
 
 export async function verifyOtp(phone: string, otp: string) {
-  // Brute-force brake: cap attempts per phone and per IP regardless of outcome.
   const ip = await callerIp();
   const limit = rateLimitAll([
     { name: "otp-verify:phone", key: phone, max: 10, windowMs: 10 * 60 * 1000 },
@@ -83,13 +78,11 @@ export async function verifyOtp(phone: string, otp: string) {
 
   if (!verification) return { error: "Invalid or expired OTP" };
 
-  // Mark as used
   await prisma.otpVerification.update({
     where: { id: verification.id },
     data: { used: true },
   });
 
-  // Find or create user
   let user = await prisma.user.findFirst({ where: { phone } });
 
   if (!user) {
@@ -110,10 +103,8 @@ export async function verifyOtp(phone: string, otp: string) {
 export async function registerUser(data: { name: string; phone: string; email?: string; city?: string }) {
   if (!data.name.trim() || data.phone.length !== 10) return { error: "Name and phone are required" };
 
-  // Check if phone already exists
   const existing = await prisma.user.findFirst({ where: { phone: data.phone } });
   if (existing) {
-    // Update and login
     await prisma.user.update({
       where: { id: existing.id },
       data: { name: data.name, email: data.email || undefined, locationCity: data.city || undefined },
@@ -145,7 +136,6 @@ export async function registerVendor(data: {
   storeCity: string;
   bio?: string;
 }) {
-  // Create user
   let user = await prisma.user.findFirst({ where: { phone: data.phone } });
 
   if (!user) {
@@ -159,7 +149,6 @@ export async function registerVendor(data: {
     });
   }
 
-  // Create vendor profile
   const storeSlug = data.storeName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
   const existingVendor = await prisma.vendor.findFirst({ where: { userId: user.id } });

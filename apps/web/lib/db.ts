@@ -10,10 +10,6 @@ import type {
   CategoryWithCount,
 } from "./types";
 
-// ============================================================
-// CATEGORIES
-// ============================================================
-
 export async function getCategoriesWithCounts(): Promise<CategoryWithCount[]> {
   const categories = await prisma.category.findMany({
     where: { isActive: true },
@@ -23,7 +19,6 @@ export async function getCategoriesWithCounts(): Promise<CategoryWithCount[]> {
     },
   });
 
-  // Get listing counts per category
   const listingCounts = await prisma.listing.groupBy({
     by: ["productId"],
     where: { status: "active" },
@@ -53,10 +48,6 @@ export async function getCategoriesWithCounts(): Promise<CategoryWithCount[]> {
     listingCount: categoryListingCount.get(c.id) || 0,
   }));
 }
-
-// ============================================================
-// LISTINGS (for homepage and grids)
-// ============================================================
 
 interface ListingFilters {
   categorySlug?: string | null;
@@ -144,10 +135,6 @@ export async function getListings(filters: ListingFilters = {}): Promise<Listing
   }));
 }
 
-// ============================================================
-// PRODUCT DETAIL (for product grouping page)
-// ============================================================
-
 export async function getProductBySlug(slug: string): Promise<ProductDetail | null> {
   const product = await prisma.product.findUnique({
     where: { slug },
@@ -184,7 +171,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
     if (product.model.specsTemplate) {
       specsTemplate = JSON.parse(product.model.specsTemplate);
     }
-  } catch { /* ignore */ }
+  } catch {}
 
   return {
     id: product.id,
@@ -216,10 +203,6 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
     })),
   };
 }
-
-// ============================================================
-// LISTING DETAIL (for individual listing page)
-// ============================================================
 
 export async function getListingById(id: string): Promise<ListingDetail | null> {
   const listing = await prisma.listing.findUnique({
@@ -253,7 +236,7 @@ export async function getListingById(id: string): Promise<ListingDetail | null> 
   let photos: string[] = [];
   try {
     if (listing.photos) photos = JSON.parse(listing.photos);
-  } catch { /* ignore */ }
+  } catch {}
 
   return {
     id: listing.id,
@@ -294,9 +277,6 @@ export async function getListingById(id: string): Promise<ListingDetail | null> 
   };
 }
 
-/**
- * Get similar listings (same product, excluding current listing)
- */
 export async function getSimilarListings(
   productId: string,
   excludeListingId: string,
@@ -345,10 +325,6 @@ export async function getSimilarListings(
   }));
 }
 
-// ============================================================
-// VENDOR PROFILE (for store page)
-// ============================================================
-
 export async function getVendorBySlug(slug: string): Promise<VendorProfile | null> {
   const vendor = await prisma.vendor.findUnique({
     where: { storeSlug: slug },
@@ -374,7 +350,6 @@ export async function getVendorBySlug(slug: string): Promise<VendorProfile | nul
 
   if (!vendor) return null;
 
-  // Compute average response time (placed → confirmed) from the last 20 orders.
   const recentOrders = await prisma.order.findMany({
     where: { vendorId: vendor.id, orderStatus: { in: ["confirmed", "shipped", "delivered"] } },
     select: { createdAt: true, updatedAt: true },
@@ -389,8 +364,6 @@ export async function getVendorBySlug(slug: string): Promise<VendorProfile | nul
     avgResponseHours = Math.round(totalHours / recentOrders.length);
   }
 
-  // Pick the most-viewed listing that has a video to hero the store when the
-  // vendor hasn't uploaded a custom banner. Stable tiebreak on createdAt.
   const videoCandidate = vendor.listings
     .filter((l) => !!l.videoUrl)
     .reduce<(typeof vendor.listings)[number] | null>((best, l) => {
@@ -453,10 +426,6 @@ export async function getVendorBySlug(slug: string): Promise<VendorProfile | nul
   };
 }
 
-// ============================================================
-// SEARCH
-// ============================================================
-
 export async function searchListings(
   query: string,
   filters: Omit<ListingFilters, "search"> = {}
@@ -465,9 +434,6 @@ export async function searchListings(
     return getListings(filters);
   }
 
-  // Route through the Postgres FTS pipeline. Fall back to the old SQL
-  // contains-based match if the FTS library throws (e.g. the setup-fts
-  // script hasn't run yet on this database).
   try {
     let results = await fullTextSearch(query, {
       categorySlug: filters.categorySlug,
@@ -479,9 +445,6 @@ export async function searchListings(
       offset: filters.offset,
     });
 
-    // Zero-result recovery: drop the narrow filters and retry once. OLX
-    // does this at the app layer; we do it inline here so /search and the
-    // public API both get it for free.
     if (results.length === 0) {
       results = await fullTextSearchBroad(query, {
         categorySlug: filters.categorySlug,

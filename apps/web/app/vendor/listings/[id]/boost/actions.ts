@@ -5,9 +5,9 @@ import { getSession } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
 const BOOST_PRICES: Record<number, number> = {
-  7: 99,     // ₹99 for 7 days
-  14: 179,   // ₹179 for 14 days
-  30: 299,   // ₹299 for 30 days
+  7: 99,
+  14: 179,
+  30: 299,
 };
 
 export async function boostListing(listingId: string, days: number) {
@@ -23,9 +23,6 @@ export async function boostListing(listingId: string, days: number) {
   const price = BOOST_PRICES[days];
   if (!price) return { error: "Invalid duration" };
 
-  // For MVP, boost is instant (no payment collection — revenue tracked later via
-  // a boost-order model). In production, this would create a Razorpay order first
-  // and only apply the boost after payment.captured webhook fires.
   const until = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
 
   await prisma.listing.update({

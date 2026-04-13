@@ -32,7 +32,7 @@ export async function bulkCreateListings(categoryId: string, rows: CsvRow[]) {
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
-    const rowNum = i + 2; // +2 for 1-indexed + header row
+    const rowNum = i + 2;
 
     try {
       const brand = await prisma.brand.findFirst({

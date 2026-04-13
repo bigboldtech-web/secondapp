@@ -19,7 +19,6 @@ function parseAddress(json: string | null): ShippingAddress | null {
     const p = JSON.parse(json);
     if (typeof p === "object" && p && "address" in p) return p as ShippingAddress;
   } catch {
-    /* noop */
   }
   return null;
 }

@@ -31,7 +31,6 @@ export default function ChatClient({ chatId, initialMessages, chatInfo }: ChatCl
 
   useEffect(() => scrollToBottom(), [messages, scrollToBottom]);
 
-  // Adaptive polling: 3s when chat is focused, 10s when tab is hidden.
   useEffect(() => {
     let active = true;
     const poll = async () => {
@@ -43,7 +42,7 @@ export default function ChatClient({ chatId, initialMessages, chatInfo }: ChatCl
           setMessages(fresh);
           prevCountRef.current = fresh.length;
         }
-      } catch { /* swallow */ }
+      } catch {}
     };
 
     let interval: ReturnType<typeof setInterval>;
@@ -67,7 +66,6 @@ export default function ChatClient({ chatId, initialMessages, chatInfo }: ChatCl
     const text = input.trim();
     if (!text || sending) return;
 
-    // Optimistic insert — appears instantly while the server call runs.
     const optimistic: Message = {
       id: `optimistic-${Date.now()}`,
       content: text,
@@ -81,13 +79,11 @@ export default function ChatClient({ chatId, initialMessages, chatInfo }: ChatCl
 
     const result = await sendMessage(chatId, text);
     if (result.error) {
-      // Roll back the optimistic message on failure.
       setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
       setSending(false);
       return;
     }
 
-    // Replace with server-confirmed messages.
     const { messages: confirmed } = await getChatMessages(chatId);
     setMessages(confirmed);
     prevCountRef.current = confirmed.length;

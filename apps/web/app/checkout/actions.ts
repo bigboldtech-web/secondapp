@@ -25,7 +25,7 @@ export async function createOrder(data: {
 
   const orderQty = Math.max(1, Math.min(data.quantity ?? 1, listing.quantity));
   const orderAmount = listing.price * orderQty;
-  const commissionRate = 0.07; // 7%
+  const commissionRate = 0.07;
   const isCod = data.paymentMethod === "cod";
 
   const provider = paymentProvider();
@@ -48,7 +48,6 @@ export async function createOrder(data: {
     },
   });
 
-  // Decrement stock by the ordered quantity. When it hits 0, mark sold.
   const newQty = listing.quantity - orderQty;
   await prisma.listing.update({
     where: { id: listing.id },
@@ -72,7 +71,6 @@ export async function createOrder(data: {
         data: { paymentId: payment.externalId },
       });
     } catch (err) {
-      // Roll back the reservation if payment gateway is unavailable.
       await prisma.listing.update({ where: { id: listing.id }, data: { status: "active" } });
       await prisma.order.update({
         where: { id: order.id },
@@ -92,7 +90,6 @@ export async function createOrder(data: {
     },
   });
 
-  // Email buyer + vendor (fire-and-forget, never blocks checkout)
   const buyer = await prisma.user.findUnique({ where: { id: session.userId }, select: { name: true, email: true } });
   const vendorUser = await prisma.user.findUnique({ where: { id: listing.vendor.userId }, select: { name: true, email: true } });
   const productName = (await prisma.product.findUnique({ where: { id: listing.productId }, select: { displayName: true } }))?.displayName ?? "Product";

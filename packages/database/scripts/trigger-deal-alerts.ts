@@ -1,11 +1,3 @@
-// Check all active deal alerts against current listings and create
-// notifications (+ send email) when a match is found.
-// Run periodically: tsx packages/database/scripts/trigger-deal-alerts.ts
-//
-// A match = active listing whose product matches the alert's productId,
-// price is at or below maxPrice (if set), and the listing was created
-// or updated after the alert's lastTriggered timestamp.
-
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -54,7 +46,6 @@ async function main() {
 
     if (!match) continue;
 
-    // Create in-app notification
     await prisma.notification.create({
       data: {
         userId: alert.userId,
@@ -65,12 +56,10 @@ async function main() {
       },
     });
 
-    // Email
     if (alert.user.email) {
       void sendAlertEmail(alert.user.email, alert.user.name, alert.product.displayName, match.price, match.id);
     }
 
-    // Update lastTriggered so we don't re-fire for the same listing
     await prisma.alert.update({
       where: { id: alert.id },
       data: { lastTriggered: new Date() },

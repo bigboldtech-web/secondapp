@@ -35,7 +35,6 @@ export default function LoginPage() {
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
-    // Auto-focus next input
     if (value && index < 5) {
       const next = document.getElementById(`otp-${index + 1}`);
       next?.focus();

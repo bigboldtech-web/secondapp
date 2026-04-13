@@ -23,7 +23,6 @@ export async function GET(req: Request) {
     },
     {
       headers: {
-        // short public cache — the data changes slowly and bursts are common
         "Cache-Control": "public, max-age=30, s-maxage=60",
       },
     }

@@ -1,10 +1,3 @@
-// Lightweight in-process rate limiter. Good enough for a single-instance
-// deploy (Vercel serverless cold-starts will give each lambda its own store,
-// so the effective budget is a little more generous than the declared one —
-// acceptable for an abuse brake, not a billing meter).
-//
-// Swap for a Redis-backed store before horizontally scaling past one box.
-
 interface Bucket {
   count: number;
   resetAt: number;
@@ -21,7 +14,6 @@ function storeFor(name: string): Map<string, Bucket> {
   return s;
 }
 
-// Lazy cleanup so expired keys don't accumulate forever.
 function purgeExpired(store: Map<string, Bucket>, now: number): void {
   if (store.size < 512) return;
   for (const [k, v] of store.entries()) {
@@ -68,7 +60,6 @@ export function rateLimit(options: {
   };
 }
 
-// Convenience: consume several limits at once and return the first failure.
 export function rateLimitAll(checks: Parameters<typeof rateLimit>[0][]): RateLimitCheck {
   let worst: RateLimitCheck | null = null;
   for (const c of checks) {

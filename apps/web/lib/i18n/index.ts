@@ -1,7 +1,3 @@
-// Lightweight i18n. No external library — just a dictionary lookup with
-// fallback to English. Translations load from JSON files in this directory.
-// Server components call t() directly; client components use the useT() hook.
-
 import en from "./en.json";
 import hi from "./hi.json";
 

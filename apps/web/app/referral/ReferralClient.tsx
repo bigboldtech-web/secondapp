@@ -29,7 +29,7 @@ export default function ReferralClient({ code, credits, referrals }: ReferralPro
       try {
         await navigator.share({ title: "Join Second App", text: `Use my code ${code} and we both get ₹100!`, url: shareUrl });
         return;
-      } catch { /* cancelled */ }
+      } catch {}
     }
     handleCopy();
   };

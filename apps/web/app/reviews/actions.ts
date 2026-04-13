@@ -16,7 +16,6 @@ export async function submitReview(data: { orderId: string; rating: number; comm
   if (!order || order.buyerId !== session.userId) return { error: "Order not found" };
   if (order.orderStatus !== "delivered") return { error: "Order must be delivered first" };
 
-  // Check existing review
   const existing = await prisma.review.findFirst({ where: { orderId: data.orderId } });
   if (existing) return { error: "Review already submitted" };
 
@@ -31,7 +30,6 @@ export async function submitReview(data: { orderId: string; rating: number; comm
     },
   });
 
-  // Update vendor rating
   const allReviews = await prisma.review.findMany({
     where: { vendorId: order.vendorId },
     select: { rating: true },
@@ -43,7 +41,6 @@ export async function submitReview(data: { orderId: string; rating: number; comm
     data: { ratingAvg: avgRating, ratingCount: allReviews.length },
   });
 
-  // Notify vendor
   await prisma.notification.create({
     data: {
       userId: order.vendor.userId,

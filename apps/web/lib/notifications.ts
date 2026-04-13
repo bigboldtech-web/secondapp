@@ -1,8 +1,3 @@
-// Pluggable delivery for email + SMS. Providers are picked up automatically
-// from env vars so dev stays zero-config (logs to console) and prod works by
-// setting the right credentials. No external SDKs — every provider hits the
-// vendor's REST API via fetch so npm install never pulls a 50 MB client.
-
 interface EmailInput {
   to: string;
   subject: string;
@@ -11,15 +6,11 @@ interface EmailInput {
 }
 
 interface SmsInput {
-  to: string;      // E.164 or 10-digit Indian number
+  to: string;
   message: string;
 }
 
 type DeliveryResult = { ok: true; provider: string } | { ok: false; error: string };
-
-// ---------------------------------------------------------------------------
-// EMAIL
-// ---------------------------------------------------------------------------
 
 function emailProvider(): "resend" | "console" {
   return process.env.RESEND_API_KEY ? "resend" : "console";
@@ -55,10 +46,6 @@ export async function sendEmail(input: EmailInput): Promise<DeliveryResult> {
   return { ok: true, provider: "resend" };
 }
 
-// ---------------------------------------------------------------------------
-// SMS
-// ---------------------------------------------------------------------------
-
 function smsProvider(): "msg91" | "console" {
   return process.env.MSG91_AUTH_KEY ? "msg91" : "console";
 }
@@ -76,7 +63,6 @@ export async function sendSms(input: SmsInput): Promise<DeliveryResult> {
     return { ok: true, provider: "console" };
   }
 
-  // MSG91 Flow API — https://docs.msg91.com
   const templateId = process.env.MSG91_TEMPLATE_ID;
   const senderId = process.env.MSG91_SENDER_ID || "SECAPP";
   if (!templateId) {
@@ -111,22 +97,14 @@ export async function sendSms(input: SmsInput): Promise<DeliveryResult> {
   return { ok: true, provider: "msg91" };
 }
 
-// ---------------------------------------------------------------------------
-// OTP generation — 6 digits, avoids the obvious 123456/000000
-// ---------------------------------------------------------------------------
-
 export function generateOtp(): string {
   if (process.env.DEV_OTP) return process.env.DEV_OTP;
-  // 100000..999999
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
 export function isDevOtpMode(): boolean {
-  // Dev mode = no SMS provider AND no DEV_OTP override (fall back to shown-in-UI)
   return smsProvider() === "console";
 }
-
-// ---------------------------------------------------------------------------
 
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({

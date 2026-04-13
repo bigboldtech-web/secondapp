@@ -3,7 +3,6 @@
 import { prisma } from "@second-app/database";
 
 export async function getPriceSuggestion(modelId: string, condition: string) {
-  // Find all active listings for this model's products
   const products = await prisma.product.findMany({
     where: { modelId },
     select: { id: true },
@@ -24,7 +23,6 @@ export async function getPriceSuggestion(modelId: string, condition: string) {
   });
 
   if (listings.length === 0) {
-    // Try any condition
     const allListings = await prisma.listing.findMany({
       where: {
         productId: { in: productIds },

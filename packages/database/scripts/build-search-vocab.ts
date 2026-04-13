@@ -1,15 +1,6 @@
-// Build the SearchTerm vocabulary table from the catalog + query logs.
-// Safe to run repeatedly — it upserts by (term, termType, categoryId).
-//
-//   tsx packages/database/scripts/build-search-vocab.ts
-
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
-
-// ---- tiny local copies of the algorithms we need here ----
-// We can't import from apps/web because this script lives in the database
-// package. Keep these in sync with apps/web/lib/search/algorithms.ts.
 
 function normalize(s: string): string {
   return s
@@ -105,7 +96,6 @@ function doubleMetaphone(word: string): string {
   return out.slice(0, 8);
 }
 
-// ---- Upsert a single term into the vocabulary ----
 interface TermSeed {
   displayTerm: string;
   termType: "brand" | "model" | "product" | "category" | "ngram" | "query";
@@ -114,8 +104,6 @@ interface TermSeed {
   frequencyHint?: number;
 }
 
-// findFirst+update/create rather than upsert because compound uniques over a
-// nullable column (categoryId) can't be used as an upsert `where` in Prisma.
 async function upsertTerm(seed: TermSeed): Promise<void> {
   const term = normalize(seed.displayTerm);
   if (!term || term.length < 2) return;
@@ -150,7 +138,6 @@ async function upsertTerm(seed: TermSeed): Promise<void> {
   }
 }
 
-// ---- Main build ----
 async function main() {
   console.log("🔎 Building search vocabulary...");
 
@@ -222,7 +209,6 @@ async function main() {
       redirectPath: `/product/${p.slug}`,
       frequencyHint: 15,
     });
-    // Progressive n-grams so "iphone" matches "Apple iPhone 11"
     for (const ngram of generateNgrams(p.displayName)) {
       if (ngram.length < 3 || ngram === normalize(p.displayName)) continue;
       await upsertTerm({
@@ -236,7 +222,6 @@ async function main() {
   }
   console.log(`  products: ${products.length}`);
 
-  // Query-log roll-up: turn frequent user searches into first-class terms.
   const recentLogs = await prisma.searchQueryLog.groupBy({
     by: ["normalized"],
     _count: { normalized: true },
