@@ -18,6 +18,7 @@
     "db:build-search-vocab": "tsx scripts/build-search-vocab.ts",
     "db:expire-listings": "tsx scripts/expire-listings.ts",
     "db:trigger-alerts": "tsx scripts/trigger-deal-alerts.ts",
+    "db:promote-categories": "tsx scripts/promote-categories.ts",
     "db:studio": "prisma studio"
   },
   "dependencies": {

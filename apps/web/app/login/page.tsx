@@ -1,13 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { t, getLocaleFromCookie, type Locale } from "@/lib/i18n";
 import { sendOtp, verifyOtp } from "@/app/auth/actions";
 
 export default function LoginPage() {
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phone, setPhone] = useState("");
+  const [locale, setLocale] = useState<Locale>("en");
+
+  useEffect(() => {
+    const cookie = document.cookie.split("; ").find((c) => c.startsWith("sa_locale="))?.split("=")[1];
+    setLocale(getLocaleFromCookie(cookie));
+  }, []);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
 
   const router = useRouter();
@@ -55,9 +62,9 @@ export default function LoginPage() {
       <main className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-[380px]">
           <div className="bg-card border border-border rounded-[12px] px-6 py-8">
-            <h1 className="text-xl font-bold text-text-primary text-center mb-1">Welcome back</h1>
+            <h1 className="text-xl font-bold text-text-primary text-center mb-1">{t("auth.welcome", locale)}</h1>
             <p className="text-[13px] text-text-muted text-center mb-6">
-              {step === "phone" ? "Enter your phone number to continue" : `Enter the OTP sent to +91 ${phone}`}
+              {step === "phone" ? t("auth.phone_prompt", locale) : `Enter the OTP sent to +91 ${phone}`}
             </p>
 
             {step === "phone" ? (
@@ -83,7 +90,7 @@ export default function LoginPage() {
                       : "bg-input text-text-muted cursor-not-allowed"
                   }`}
                 >
-                  Send OTP
+                  {t("auth.send_otp", locale)}
                 </button>
               </form>
             ) : (
@@ -128,23 +135,23 @@ export default function LoginPage() {
                       : "bg-input text-text-muted cursor-not-allowed"
                   }`}
                 >
-                  {loading ? "Verifying..." : "Verify & Login"}
+                  {loading ? "..." : t("auth.verify", locale)}
                 </button>
                 {error && <p className="text-[12px] text-condition-rough-text mt-2 text-center">{error}</p>}
                 <button
                   onClick={() => setStep("phone")}
                   className="w-full mt-2 py-2 text-[12px] text-text-muted bg-transparent border-none cursor-pointer hover:text-text-secondary"
                 >
-                  Change phone number
+                  {t("auth.change_phone", locale)}
                 </button>
               </div>
             )}
 
             <div className="mt-6 pt-4 border-t border-border text-center">
               <p className="text-[12px] text-text-muted">
-                Don&apos;t have an account?{" "}
+                {t("auth.no_account", locale)}{" "}
                 <Link href="/register" className="text-coral font-semibold no-underline">
-                  Sign up
+                  {t("auth.sign_up", locale)}
                 </Link>
               </p>
             </div>

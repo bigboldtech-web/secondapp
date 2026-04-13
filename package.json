@@ -20,6 +20,7 @@
     "db:build-search-vocab": "cd packages/database && tsx scripts/build-search-vocab.ts",
     "db:expire-listings": "cd packages/database && tsx scripts/expire-listings.ts",
     "db:trigger-alerts": "cd packages/database && tsx scripts/trigger-deal-alerts.ts",
+    "db:promote-categories": "cd packages/database && tsx scripts/promote-categories.ts",
     "db:studio": "cd packages/database && prisma studio"
   },
   "devDependencies": {

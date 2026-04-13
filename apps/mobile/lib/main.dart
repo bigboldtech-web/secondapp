@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'api/client.dart';
 import 'models/listing.dart';
-import 'screens/home_screen.dart';
+import 'screens/main_shell.dart';
 import 'screens/listing_detail_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/profile_screen.dart';
@@ -57,11 +57,12 @@ class _SecondAppState extends State<SecondApp> {
         debugShowCheckedModeBanner: false,
         initialRoute: "/",
         routes: {
-          "/": (_) => const HomeScreen(),
+          "/": (_) => const MainShell(),
           "/login": (_) => const LoginScreen(),
           "/profile": (_) => const ProfileScreen(),
           "/saved": (_) => const SavedScreen(),
           "/inbox": (_) => const InboxScreen(),
+          "/sell": (_) => const LoginScreen(),
         },
         onGenerateRoute: (settings) {
           if (settings.name?.startsWith("/listing/") ?? false) {
