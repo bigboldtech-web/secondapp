@@ -8,8 +8,6 @@ import ProductGrid from "./ProductGrid";
 import ProductCard from "./ProductCard";
 import DealAlertBanner from "./DealAlertBanner";
 import BottomNav from "./BottomNav";
-import Footer from "./Footer";
-
 interface HomepageProps {
   listings: ListingCardData[];
   categories: CategoryWithCount[];
@@ -17,9 +15,10 @@ interface HomepageProps {
   userName?: string;
   recentlyViewed?: ListingCardData[];
   forYou?: ListingCardData[];
+  footer?: React.ReactNode;
 }
 
-export default function Homepage({ listings, categories, isLoggedIn, userName, recentlyViewed, forYou }: HomepageProps) {
+export default function Homepage({ listings, categories, isLoggedIn, userName, recentlyViewed, forYou, footer }: HomepageProps) {
   const [city, setCity] = useState("All India");
   const [isMobile, setIsMobile] = useState(false);
   const [locale, setLocale] = useState<Locale>("en");
@@ -101,7 +100,7 @@ export default function Homepage({ listings, categories, isLoggedIn, userName, r
         <DealAlertBanner isMobile={isMobile} />
       </main>
 
-      <Footer />
+      {footer}
       <BottomNav />
     </div>
   );

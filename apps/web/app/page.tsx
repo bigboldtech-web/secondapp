@@ -5,6 +5,7 @@ import { parseSpecs, parsePhotos } from "@/lib/utils";
 import { getPersonalizedListingIds } from "@/lib/personalize";
 import { cached } from "@/lib/cache";
 import Homepage from "@/components/Homepage";
+import Footer from "@/components/Footer";
 import type { ListingCardData } from "@/lib/types";
 
 export default async function Home() {
@@ -98,6 +99,7 @@ export default async function Home() {
       userName={session?.user?.name}
       recentlyViewed={recentlyViewed}
       forYou={forYou}
+      footer={<Footer />}
     />
   );
 }

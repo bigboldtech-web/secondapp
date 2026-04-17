@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ProductDetail, ProductListingData, CONDITION_COLORS, CATEGORY_ICONS } from "@/lib/types";
 import { formatPrice, formatTimeAgo, calcDiscount } from "@/lib/utils";
 import { createAlert } from "@/app/actions";
@@ -279,6 +280,7 @@ function ListingCard({ listing, categorySlug, isLowestPrice, rank, totalListings
   rank?: number;
   totalListings?: number;
 }) {
+  const router = useRouter();
   const condStyle = CONDITION_COLORS[listing.condition] || { bg: "bg-gray-100", text: "text-gray-700" };
   const discount = calcDiscount(listing.price, listing.originalPrice);
   const certBadge = CERT_BADGES[listing.vendorCertification];
@@ -345,13 +347,17 @@ function ListingCard({ listing, categorySlug, isLowestPrice, rank, totalListings
           </div>
 
           {/* Buy Now button */}
-          <a
-            href={`/checkout?listing=${listing.id}`}
-            onClick={(e) => e.stopPropagation()}
-            className="block w-full py-2 rounded-md bg-coral text-white text-[12px] font-semibold text-center no-underline hover:bg-[#d44a34] transition-colors"
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              router.push(`/checkout?listing=${listing.id}`);
+            }}
+            className="block w-full py-2 rounded-md bg-coral text-white text-[12px] font-semibold text-center border-none cursor-pointer hover:bg-[#d44a34] transition-colors"
           >
             Buy Now
-          </a>
+          </button>
 
           {/* FOMO */}
           {listing.viewCount > 80 && (
